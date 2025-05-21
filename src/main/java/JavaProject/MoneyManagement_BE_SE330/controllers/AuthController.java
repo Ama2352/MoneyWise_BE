@@ -1,9 +1,9 @@
 package JavaProject.MoneyManagement_BE_SE330.controllers;
 
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.LoginDTO;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.RegisterDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.LoginDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.AuthService;
-import JavaProject.MoneyManagement_BE_SE330.services.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/Accounts")
+@Tag(name = "Authentication")
 public class AuthController {
     private final AuthService authService;
-    private final UserService userService;
 
     @PostMapping("/SignIn")
     public ResponseEntity<String> login(@RequestBody LoginDTO request) {

@@ -1,4 +1,4 @@
-package JavaProject.MoneyManagement_BE_SE330.models.dtos;
+package JavaProject.MoneyManagement_BE_SE330.models.dtos.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

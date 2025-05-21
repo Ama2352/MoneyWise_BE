@@ -1,7 +1,7 @@
 package JavaProject.MoneyManagement_BE_SE330.services;
 
 import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.RegisterDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
