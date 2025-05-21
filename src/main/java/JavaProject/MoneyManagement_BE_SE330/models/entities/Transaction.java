@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
-    private UUID transactionId;
+    private UUID transactionID;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -39,8 +39,8 @@ public class Transaction {
 
     @PrePersist
     protected void onCreate() {
-        if(transactionId == null) {
-            transactionId = UUID.randomUUID();
+        if(transactionID == null) {
+            transactionID = UUID.randomUUID();
         }
     }
 }

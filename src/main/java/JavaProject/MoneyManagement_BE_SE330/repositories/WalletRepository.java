@@ -10,6 +10,6 @@ import java.util.UUID;
 
 public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     List<Wallet> findAllByUser(User user);
-    Optional<Wallet> findByWalletIdAndUser(UUID walletId, User user);
+    Optional<Wallet> findByWalletIDAndUser(UUID walletID, User user);
     boolean existsByUser(User user);
 }

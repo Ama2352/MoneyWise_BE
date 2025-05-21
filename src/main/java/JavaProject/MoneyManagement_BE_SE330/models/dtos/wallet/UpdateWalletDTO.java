@@ -14,7 +14,7 @@ import java.util.UUID;
 public class UpdateWalletDTO {
 
     @NotNull(message = "WalletId must not be null")
-    private UUID walletId;
+    private UUID walletID;
 
     @NotNull(message = "WalletName must not be null")
     private String walletName;

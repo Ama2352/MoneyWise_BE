@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class WalletDTO {
-    private UUID walletId;
+    private UUID walletID;
     private String walletName;
     private BigDecimal balance;
 }

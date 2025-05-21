@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class CategoryDTO {
-    private UUID categoryId;
+    private UUID categoryID;
     private String name;
     private LocalDateTime createdAt;
 }

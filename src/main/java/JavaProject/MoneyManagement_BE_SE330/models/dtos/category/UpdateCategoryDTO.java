@@ -13,7 +13,7 @@ import java.util.UUID;
 public class UpdateCategoryDTO {
 
     @NotNull(message = "CategoryId must not be null")
-    private UUID categoryId;
+    private UUID categoryID;
 
     @NotNull(message = "CategoryName must not be null")
     private String name;

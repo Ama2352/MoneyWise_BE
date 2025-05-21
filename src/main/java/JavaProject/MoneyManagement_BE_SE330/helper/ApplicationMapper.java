@@ -4,6 +4,7 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.CreateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDetailDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.UpdateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.CreateWalletDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.WalletDTO;
@@ -15,6 +16,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -37,7 +41,7 @@ public interface ApplicationMapper {
     // Category Mappings
     CategoryDTO toCategoryDTO(Category model);
 
-    @Mapping(target = "categoryId", ignore = true)
+    @Mapping(target = "categoryID", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "transactions", ignore = true)
@@ -51,47 +55,63 @@ public interface ApplicationMapper {
     Wallet toWalletEntity(CreateWalletDTO model);
 
     // Transaction Mappings
-
-    @Mapping(target = "walletId", source = "wallet", qualifiedByName = "extractWalletId")
-    @Mapping(target = "categoryId", source = "category", qualifiedByName = "extractCategoryId")
+    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletID")
+    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryID")
     TransactionDTO toTransactionDTO(Transaction model);
-    @Named("extractWalletId")
-    default UUID extractWalletId(Wallet wallet) {
-        return wallet.getWalletId();
+
+    @Named("extractWalletID")
+    default UUID extractWalletID(Wallet wallet) {
+        return wallet.getWalletID();
     }
-    @Named("extractCategoryId")
-    default UUID extractCategoryId(Category category) {
-        return category.getCategoryId();
+    @Named("extractCategoryID")
+    default UUID extractCategoryID(Category category) {
+        return category.getCategoryID();
     }
 
-    @Mapping(target = "transactionId", ignore = true) // generated on persist
-    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "transactionID", ignore = true) // generated on persist
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromID")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromID")
     Transaction toTransactionEntity(CreateTransactionDTO model);
 
-    @Mapping(target = "transactionId", ignore = true) // keep existing ID
-    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "transactionID", ignore = true) // keep existing ID
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromID")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromID")
     Transaction toTransactionEntity(UpdateTransactionDTO model);
 
     // Helper mappings to convert UUIDs to entities with only IDs set (for reference)
-    @Named("mapWalletFromId")
-    default Wallet mapWalletFromId(UUID walletId) {
-        if (walletId == null) {
+    @Named("mapWalletFromID")
+    default Wallet mapWalletFromID(UUID walletID) {
+        if (walletID == null) {
             return null;
         }
         Wallet wallet = new Wallet();
-        wallet.setWalletId(walletId);
+        wallet.setWalletID(walletID);
         return wallet;
     }
 
-    @Named("mapCategoryFromId")
-    default Category mapCategoryFromId(UUID categoryId) {
-        if (categoryId == null) {
+    @Named("mapCategoryFromID")
+    default Category mapCategoryFromID(UUID categoryID) {
+        if (categoryID == null) {
             return null;
         }
         Category category = new Category();
-        category.setCategoryId(categoryId);
+        category.setCategoryID(categoryID);
         return category;
+    }
+
+    // ----------- Transaction → TransactionDetailDTO Mapping -----------
+    @Mapping(target = "date", expression = "java(transaction.getTransactionDate())")
+    @Mapping(target = "time", expression = "java(transaction.getTransactionDate().toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern(\"HH:mm:ss\")))")
+    @Mapping(target = "dayOfWeek", expression = "java(capitalizeDayOfWeek(transaction.getTransactionDate().getDayOfWeek()))")
+    @Mapping(target = "month", expression = "java(transaction.getTransactionDate().getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH))")
+    @Mapping(target = "category", source = "category.name")
+    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryID")
+    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletID")
+    @Mapping(target = "walletName", source = "wallet.walletName")
+    TransactionDetailDTO toTransactionDetailDTO(Transaction transaction);
+
+    default String capitalizeDayOfWeek(DayOfWeek dayOfWeek) {
+        String lower = dayOfWeek.toString().toLowerCase(); // e.g. "monday"
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1); // "Monday"
     }
 }

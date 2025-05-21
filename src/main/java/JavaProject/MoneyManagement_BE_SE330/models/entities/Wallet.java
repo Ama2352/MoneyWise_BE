@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Wallet {
 
     @Id
-    private UUID walletId;
+    private UUID walletID;
 
     @Column(nullable = false)
     private String walletName;
@@ -40,8 +40,8 @@ public class Wallet {
 
     @PrePersist
     protected void onCreate() {
-        if(walletId == null) {
-            walletId = UUID.randomUUID();
+        if(walletID == null) {
+            walletID = UUID.randomUUID();
         }
     }
 }

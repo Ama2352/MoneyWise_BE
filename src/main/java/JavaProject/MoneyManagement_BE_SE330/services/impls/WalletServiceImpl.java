@@ -12,7 +12,6 @@ import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
 import JavaProject.MoneyManagement_BE_SE330.repositories.WalletRepository;
 import JavaProject.MoneyManagement_BE_SE330.services.WalletService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,7 +38,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public WalletDTO getWalletById(UUID walletId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, currentUser)
+        Wallet wallet = walletRepository.findByWalletIDAndUser(walletId, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         return applicationMapper.toWalletDTO(wallet);
     }
@@ -54,7 +53,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     public WalletDTO updateWallet(UpdateWalletDTO model) {
-        Wallet wallet = walletRepository.findById(model.getWalletId())
+        Wallet wallet = walletRepository.findById(model.getWalletID())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         wallet.setUser(HelperFunctions.getCurrentUser(userRepository));
 
@@ -68,7 +67,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public UUID deleteWalletById(UUID walletId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, currentUser)
+        Wallet wallet = walletRepository.findByWalletIDAndUser(walletId, currentUser)
                         .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         walletRepository.delete(wallet);
         return walletId;

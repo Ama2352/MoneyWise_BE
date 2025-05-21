@@ -17,7 +17,7 @@ import java.util.UUID;
 public class CreateTransactionDTO {
 
     @NotNull(message = "CategoryID must not be null")
-    private UUID categoryId;
+    private UUID categoryID;
 
     @NotNull(message = "Amount must not be null")
     private BigDecimal amount;
@@ -28,7 +28,7 @@ public class CreateTransactionDTO {
     private LocalDateTime transactionDate;
 
     @NotNull(message = "WalletID must not be null")
-    private UUID walletId;
+    private UUID walletID;
 
     @Pattern(regexp = "income|expense", message = "Type must be either 'income' or 'expense'")
     @NotNull(message = "Type must not be null")

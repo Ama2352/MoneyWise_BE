@@ -6,12 +6,16 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,4 +60,42 @@ public class TransactionController {
         UUID deletedId = transactionService.deleteTransactionById(transactionId);
         return ResponseEntity.ok(deletedId);
     }
+
+    @GetMapping("/date-range")
+    public ResponseEntity<?> getTransactionsByDateRange(
+            @Valid @ModelAttribute @ParameterObject GetTransactionsByDateRangeDTO dto,
+            BindingResult bindingResult
+    ) {
+
+        if (bindingResult.hasErrors()) {
+            // Collect validation errors into a simple list or string
+            String errors = bindingResult.getAllErrors()
+                    .stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .collect(Collectors.joining(", "));
+            return ResponseEntity.badRequest().body(errors);
+        }
+
+        var transactions = transactionService.getTransactionsByDateRange(dto);
+
+        return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchTransactions(
+            @Valid @ModelAttribute @ParameterObject SearchTransactionsDTO dto,
+            BindingResult bindingResult
+    ) {
+        if (bindingResult.hasErrors()) {
+            String errors = bindingResult.getAllErrors()
+                    .stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .collect(Collectors.joining(", "));
+            return ResponseEntity.badRequest().body(errors);
+        }
+
+        List<TransactionDetailDTO> transactions = transactionService.searchTransactions(dto);
+        return ResponseEntity.ok(transactions);
+    }
+
 }

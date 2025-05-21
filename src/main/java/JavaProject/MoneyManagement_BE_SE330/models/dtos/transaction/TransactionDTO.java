@@ -12,11 +12,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class TransactionDTO {
-    private UUID transactionId;
-    private UUID categoryId;
+    private UUID transactionID;
+    private UUID categoryID;
     private BigDecimal amount;
     private String description; // nullable by default in Java
     private LocalDateTime transactionDate;
     private String type;
-    private UUID walletId;
+    private UUID walletID;
 }
