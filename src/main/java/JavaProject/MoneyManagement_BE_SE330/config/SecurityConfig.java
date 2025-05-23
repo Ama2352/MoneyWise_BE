@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableWebSecurity
@@ -36,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/Accounts/SignUp",
                                 "/api/Accounts/SignIn",
+                                "/api/Accounts/RefreshToken",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
@@ -49,5 +51,10 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
