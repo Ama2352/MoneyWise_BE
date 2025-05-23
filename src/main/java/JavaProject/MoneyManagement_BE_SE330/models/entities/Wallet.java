@@ -25,8 +25,8 @@ public class Wallet {
     @Column(nullable = false)
     private BigDecimal balance;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL)

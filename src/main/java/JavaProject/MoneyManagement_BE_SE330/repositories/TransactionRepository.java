@@ -20,4 +20,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findAllByWalletUserAndTransactionDateBetween(User currentUser, LocalDateTime startOfDay, LocalDateTime endOfDay);
 
     List<Transaction> findByTransactionDateBetweenAndWalletWalletIDInOrderByTransactionDate(LocalDateTime startOfMonth, LocalDateTime endOfMonth, List<UUID> userWalletIds);
+
+    List<Transaction> findByWalletWalletIDInAndTransactionDateBetween(List<UUID> walletIds, LocalDateTime startOfDay, LocalDateTime endOfDay);
 }

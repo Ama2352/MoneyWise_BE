@@ -17,14 +17,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 import java.time.format.TextStyle;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -167,12 +168,8 @@ public class TransactionServiceImpl implements TransactionService {
         List<Transaction> filteredTransactions = allTransactions.stream()
                 .filter(t -> !t.getTransactionDate().isBefore(startDateTime)
                         && !t.getTransactionDate().isAfter(endDateTime))
-                .filter(t -> {
-                    String type = filter.getType();
-                    if (type == null) return true;
-                    return type.equalsIgnoreCase("expense") ? t.getAmount().compareTo(BigDecimal.ZERO) < 0
-                            : !type.equalsIgnoreCase("income") || t.getAmount().compareTo(BigDecimal.ZERO) > 0;
-                })
+                .filter(t -> filter.getType() == null ||
+                        t.getType().equalsIgnoreCase(filter.getType()))
                 .filter(t -> filter.getCategory() == null ||
                         t.getCategory().getName().equalsIgnoreCase(filter.getCategory()))
                 .filter(t -> {
@@ -221,11 +218,8 @@ public class TransactionServiceImpl implements TransactionService {
         List<Transaction> transactions = transactionRepository.findAllByWalletUser(currentUser)
                 .stream()
                 .filter(t -> !t.getTransactionDate().isBefore(startDateTime) && !t.getTransactionDate().isAfter(endDateTime))
-                .filter(t -> {
-                    if (filter.getType() == null) return true;
-                    return filter.getType().equalsIgnoreCase("expense") ? t.getAmount().compareTo(BigDecimal.ZERO) < 0 :
-                            filter.getType().equalsIgnoreCase("income") && t.getAmount().compareTo(BigDecimal.ZERO) > 0;
-                })
+                .filter(t -> filter.getType() == null ||
+                        t.getType().equalsIgnoreCase(filter.getType()))
                 .filter(t -> filter.getCategory() == null ||
                         t.getCategory().getName().equalsIgnoreCase(filter.getCategory()))
                 .filter(t -> {
@@ -293,11 +287,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             // Separate income and expenses
             List<Transaction> incomeTransactions = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                    .filter(t -> "income".equalsIgnoreCase(t.getType()))
                     .toList();
+
             List<Transaction> expenseTransactions = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
+                    .filter(t -> "expense".equalsIgnoreCase(t.getType()))
                     .toList();
+
 
             BigDecimal totalIncome = incomeTransactions.stream()
                     .map(Transaction::getAmount)
@@ -356,375 +352,302 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    @Transactional(readOnly = true)
     public DailySummaryDTO getDailySummary(LocalDate date) {
-        try {
-            log.info("Generating daily summary for date {}", date);
+        // 1) resolve user and their wallets
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<UUID> walletIds = walletRepository
+                .findAllByUser(currentUser)
+                .stream()
+                .map(Wallet::getWalletID)
+                .toList();
 
-            User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        // 2) define day‐bounds
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay   = date.atTime(LocalTime.MAX);
 
-            // Get all wallets owned by the current user
-            List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                    .stream()
-                    .map(Wallet::getWalletID)
-                    .toList();
+        // 3) fetch daily transactions (for totals)
+        List<Transaction> dailyTxs = transactionRepository
+                .findByWalletWalletIDInAndTransactionDateBetween(
+                        walletIds, startOfDay, endOfDay);
 
-            LocalDateTime startOfDay = date.atStartOfDay();
-            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        // 4) compute totalIncome & totalExpenses by type
+        BigDecimal totalIncome = dailyTxs.stream()
+                .filter(tx -> "income".equalsIgnoreCase(tx.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            List<Transaction> transactions = transactionRepository.findAllByWalletUserAndTransactionDateBetween(
-                    currentUser, startOfDay, endOfDay);
+        BigDecimal totalExpenses = dailyTxs.stream()
+                .filter(tx -> "expense".equalsIgnoreCase(tx.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Group transactions by DayOfWeek (though for single day it will be one group)
-            Map<DayOfWeek, List<Transaction>> groupedByDay = transactions.stream()
-                    .collect(Collectors.groupingBy(t -> t.getTransactionDate().getDayOfWeek()));
+        // 5) define current week (Monday → next Monday)
+        LocalDate weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate weekEnd   = weekStart.plusDays(7);
+        LocalDateTime weekStartDT = weekStart.atStartOfDay();
+        LocalDateTime weekEndDT   = weekEnd.atStartOfDay();
 
-            List<DailyDetailDTO> dailyDetails = groupedByDay.entrySet().stream()
-                    .map(entry -> {
-                        DayOfWeek dayOfWeek = entry.getKey();
-                        List<Transaction> txns = entry.getValue();
+        // 6) fetch week transactions (for dailyDetails)
+        List<Transaction> weekTxs = transactionRepository
+                .findByWalletWalletIDInAndTransactionDateBetween(
+                        walletIds, weekStartDT, weekEndDT);
 
-                        BigDecimal income = txns.stream()
-                                .map(Transaction::getAmount)
-                                .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 7) group by DayOfWeek
+        Map<DayOfWeek, List<Transaction>> txsByDow = weekTxs.stream()
+                .collect(Collectors.groupingBy(tx -> tx.getTransactionDate().getDayOfWeek()));
 
-                        BigDecimal expense = txns.stream()
-                                .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
-                                .map(t -> t.getAmount().abs())
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 8) build a full‐week list, filtering by type
+        List<DailyDetailDTO> dailyDetails = Arrays.stream(DayOfWeek.values())
+                .map(dow -> {
+                    List<Transaction> txs = txsByDow.getOrDefault(dow, List.of());
 
-                        DailyDetailDTO detail = new DailyDetailDTO();
-                        detail.setDayOfWeek(dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH));
-                        detail.setIncome(income);
-                        detail.setExpense(expense);
-                        return detail;
-                    })
-                    .collect(Collectors.toList());
+                    BigDecimal income = txs.stream()
+                            .filter(tx -> "income".equalsIgnoreCase(tx.getType()))
+                            .map(Transaction::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal totalIncome = transactions.stream()
-                    .map(Transaction::getAmount)
-                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal expense = txs.stream()
+                            .filter(tx -> "expense".equalsIgnoreCase(tx.getType()))
+                            .map(Transaction::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal totalExpenses = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
-                    .map(t -> t.getAmount().abs())
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new DailyDetailDTO(
+                            dow.getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                            income,
+                            expense
+                    );
+                })
+                .collect(Collectors.toList());
 
-            DailySummaryDTO result = new DailySummaryDTO();
-            result.setDate(date);
-            result.setDayOfWeek(date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH));
-            result.setMonth(date.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH));
-            result.setDailyDetails(dailyDetails);
-            result.setTotalIncome(totalIncome);
-            result.setTotalExpenses(totalExpenses);
-            result.setTransactions(transactions.stream()
-                    .map(applicationMapper::toTransactionDetailDTO)
-                    .collect(Collectors.toList()));
-
-            return result;
-
-        } catch (Exception ex) {
-            log.error("Error generating daily summary", ex);
-            throw ex;
-        }
+        // 9) assemble and return
+        DailySummaryDTO summary = new DailySummaryDTO();
+        summary.setDailyDetails(dailyDetails);
+        summary.setTotalIncome(totalIncome);
+        summary.setTotalExpenses(totalExpenses);
+        return summary;
     }
 
     public WeeklySummaryDTO getWeeklySummary(LocalDate weekStartDate) {
-        try {
-            log.info("Generating weekly summary for week starting {}", weekStartDate);
+        // 1. Get all wallet IDs for the user
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
+                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
 
-            User user = HelperFunctions.getCurrentUser(userRepository);
+        if (userWalletIds.isEmpty()) {
+            // No wallets -> empty summary
+            WeeklySummaryDTO empty = new WeeklySummaryDTO();
+            empty.setWeeklyDetails(new ArrayList<>());
+            empty.setTotalIncome(BigDecimal.ZERO);
+            empty.setTotalExpenses(BigDecimal.ZERO);
+            return empty;
+        }
 
-            List<UUID> walletIds = walletRepository.findAllByUser(user)
-                    .stream()
-                    .map(Wallet::getWalletID)
+        // 2. Determine the range for the entire month that contains the weekStartDate
+        LocalDate firstDayOfMonth = weekStartDate.withDayOfMonth(1);
+        LocalDate lastDayOfMonth = firstDayOfMonth.plusMonths(1).minusDays(1);
+
+        // 3. Expand to full weeks
+        LocalDate firstWeekStart = firstDayOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate lastWeekEnd = lastDayOfMonth.with(TemporalAdjusters.next(DayOfWeek.SUNDAY)).plusDays(1);
+
+        // 4. Fetch all transactions in the expanded range
+        List<Transaction> allMonthTransactions = transactionRepository
+                .findByWalletWalletIDInAndTransactionDateBetween(
+                        userWalletIds,
+                        firstWeekStart.atStartOfDay(),
+                        lastWeekEnd.atStartOfDay()
+                );
+
+        // 5. Process weekly details
+        List<WeeklyDetailDTO> weeklyDetails = new ArrayList<>();
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpenses = BigDecimal.ZERO;
+
+        int weekNumber = 1;
+        for (LocalDate weekStart = firstWeekStart; weekStart.isBefore(lastWeekEnd); weekStart = weekStart.plusWeeks(1), weekNumber++) {
+            LocalDate weekEnd = weekStart.plusDays(7);
+
+            LocalDate finalWeekStart = weekStart;
+            List<Transaction> weekTxs = allMonthTransactions.stream()
+                    .filter(t -> {
+                        LocalDate date = t.getTransactionDate().toLocalDate();
+                        return !date.isBefore(finalWeekStart) && date.isBefore(weekEnd);
+                    })
                     .toList();
 
-            LocalDateTime startOfWeek = weekStartDate.atStartOfDay();
-            LocalDateTime endOfWeek = startOfWeek.plusDays(7).minusNanos(1);
+            BigDecimal income = weekTxs.stream()
+                    .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            List<Transaction> transactions = transactionRepository.findAllByWalletUser(user).stream()
-                    .filter(t -> !t.getTransactionDate().isBefore(startOfWeek) && !t.getTransactionDate().isAfter(endOfWeek))
-                    .sorted(Comparator.comparing(Transaction::getTransactionDate))
-                    .toList();
+            BigDecimal expense = weekTxs.stream()
+                    .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                    .map(t -> t.getAmount().abs())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            int weekOfMonth = (weekStartDate.getDayOfMonth() - 1) / 7 + 1;
+            totalIncome = totalIncome.add(income);
+            totalExpenses = totalExpenses.add(expense);
 
-            List<WeeklyDetailDTO> weeklyDetails = new ArrayList<>();
-            BigDecimal totalIncome = BigDecimal.ZERO;
-            BigDecimal totalExpense = BigDecimal.ZERO;
+            WeeklyDetailDTO detail = new WeeklyDetailDTO();
+            detail.setWeekNumber(String.valueOf(weekNumber));
+            detail.setIncome(income);
+            detail.setExpense(expense);
+            weeklyDetails.add(detail);
+        }
 
-            if (!transactions.isEmpty()) {
-                Map<Integer, List<Transaction>> groupedByWeek = transactions.stream()
-                        .collect(Collectors.groupingBy(t ->
-                                (startOfWeek.getDayOfMonth() + 6 - t.getTransactionDate().getDayOfWeek().getValue()) / 7 + 1
-                        ));
+        WeeklySummaryDTO result = new WeeklySummaryDTO();
+        result.setWeeklyDetails(weeklyDetails);
+        result.setTotalIncome(totalIncome);
+        result.setTotalExpenses(totalExpenses);
 
-                for (Map.Entry<Integer, List<Transaction>> entry : groupedByWeek.entrySet()) {
-                    int weekKey = entry.getKey();
-                    List<Transaction> group = entry.getValue();
+        return result;
+    }
 
-                    BigDecimal income = group.stream()
+
+
+    public MonthlySummaryDTO getMonthlySummary(YearMonth yearMonth) {
+        // 1. Get wallet IDs for the user
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
+                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
+
+        if (userWalletIds.isEmpty()) {
+            MonthlySummaryDTO empty = new MonthlySummaryDTO();
+            empty.setMonthlyDetails(new ArrayList<>());
+            empty.setTotalIncome(BigDecimal.ZERO);
+            empty.setTotalExpenses(BigDecimal.ZERO);
+            return empty;
+        }
+
+        // 2. Define year range
+        LocalDate startOfYear = yearMonth.atDay(1).withDayOfYear(1);
+        LocalDate endOfYear = startOfYear.plusYears(1).minusDays(1);
+
+        // 3. Fetch all transactions for the year for the user's wallets
+        List<Transaction> yearTransactions = transactionRepository
+                .findByWalletWalletIDInAndTransactionDateBetween(
+                        userWalletIds,
+                        startOfYear.atStartOfDay(),
+                        endOfYear.atTime(LocalTime.MAX)
+                );
+
+        // 4. Build MonthlyDetailDTOs for each month
+        List<MonthlyDetailDTO> monthlyDetails = IntStream.rangeClosed(1, 12)
+                .mapToObj(month -> {
+                    List<Transaction> monthlyTxs = yearTransactions.stream()
+                            .filter(t -> t.getTransactionDate().getMonthValue() == month)
+                            .toList();
+
+                    BigDecimal income = monthlyTxs.stream()
+                            .filter(t -> "income".equalsIgnoreCase(t.getType()))
                             .map(Transaction::getAmount)
-                            .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                    BigDecimal expense = group.stream()
-                            .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
+                    BigDecimal expense = monthlyTxs.stream()
+                            .filter(t -> "expense".equalsIgnoreCase(t.getType()))
                             .map(t -> t.getAmount().abs())
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                    weeklyDetails.add(new WeeklyDetailDTO(String.valueOf(weekKey), income, expense));
+                    MonthlyDetailDTO dto = new MonthlyDetailDTO();
+                    dto.setMonthName(Month.of(month).getDisplayName(TextStyle.FULL, Locale.getDefault()));
+                    dto.setIncome(income);
+                    dto.setExpense(expense);
+                    return dto;
+                })
+                .collect(Collectors.toList());
 
-                    totalIncome = totalIncome.add(income);
-                    totalExpense = totalExpense.add(expense);
-                }
-            }
+        // 5. Sum total income and expenses for requested month
+        LocalDate startOfMonth = yearMonth.atDay(1);
+        LocalDate endOfMonth = startOfMonth.plusMonths(1).minusDays(1);
 
-            BigDecimal netCashFlow = totalIncome.subtract(totalExpense);
+        BigDecimal totalIncome = yearTransactions.stream()
+                .filter(t -> {
+                    LocalDate d = t.getTransactionDate().toLocalDate();
+                    return !d.isBefore(startOfMonth) && !d.isAfter(endOfMonth);
+                })
+                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            Map<String, BigDecimal> dailyTotals = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                            LinkedHashMap::new,
-                            Collectors.reducing(
-                                    BigDecimal.ZERO,
-                                    Transaction::getAmount,
-                                    BigDecimal::add
-                            )
-                    ));
+        BigDecimal totalExpenses = yearTransactions.stream()
+                .filter(t -> {
+                    LocalDate d = t.getTransactionDate().toLocalDate();
+                    return !d.isBefore(startOfMonth) && !d.isAfter(endOfMonth);
+                })
+                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .map(t -> t.getAmount().abs())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            Map<String, BigDecimal> dailyIncomeTotals = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) > 0)
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                            LinkedHashMap::new,
-                            Collectors.reducing(
-                                    BigDecimal.ZERO,
-                                    Transaction::getAmount,
-                                    BigDecimal::add
-                            )
-                    ));
-
-            Map<String, BigDecimal> dailyExpenseTotals = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                            LinkedHashMap::new,
-                            Collectors.reducing(
-                                    BigDecimal.ZERO,
-                                    t -> t.getAmount().abs(),
-                                    BigDecimal::add
-                            )
-                    ));
-
-            List<TransactionDetailDTO> transactionDTOs = transactions.stream()
-                    .map(applicationMapper::toTransactionDetailDTO)
-                    .collect(Collectors.toList());
-
-            return WeeklySummaryDTO.builder()
-                    .startDate(startOfWeek.toLocalDate())
-                    .endDate(endOfWeek.toLocalDate())
-                    .weekNumber(weekOfMonth)
-                    .year(weekStartDate.getYear())
-                    .weeklyDetails(weeklyDetails)
-                    .totalIncome(totalIncome)
-                    .totalExpenses(totalExpense)
-                    .netCashFlow(netCashFlow)
-                    .transactions(transactionDTOs)
-                    .dailyTotals(dailyTotals)
-                    .dailyIncomeTotals(dailyIncomeTotals)
-                    .dailyExpenseTotals(dailyExpenseTotals)
-                    .build();
-
-        } catch (Exception ex) {
-            log.error("Error generating weekly summary", ex);
-            throw new RuntimeException("Weekly summary generation failed", ex);
-        }
-    }
-
-    public MonthlySummaryDTO getMonthlySummary(YearMonth yearMonth) {
-        try {
-            log.info("Generating monthly summary for {}-{}", yearMonth.getYear(), yearMonth.getMonthValue());
-
-            User currentUser = HelperFunctions.getCurrentUser(userRepository);
-
-            // Step 1: Get wallet IDs for the current user
-            List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser).stream()
-                    .map(Wallet::getWalletID)
-                    .collect(Collectors.toList());
-
-            // Step 2: Define date range
-            LocalDateTime startOfMonth = yearMonth.atDay(1).atStartOfDay();
-            LocalDateTime endOfMonth = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
-
-            // Step 3: Fetch transactions
-            List<Transaction> transactions = transactionRepository.findByTransactionDateBetweenAndWalletWalletIDInOrderByTransactionDate(
-                    startOfMonth, endOfMonth, userWalletIds);
-
-            // Step 4: Monthly detail (usually just one month)
-            List<MonthlyDetailDTO> monthlyDetails = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-                    ))
-                    .entrySet().stream()
-                    .map(entry -> new MonthlyDetailDTO(
-                            entry.getKey(),
-                            entry.getValue().stream().map(Transaction::getAmount)
-                                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0).reduce(BigDecimal.ZERO, BigDecimal::add),
-                            entry.getValue().stream().map(Transaction::getAmount)
-                                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) < 0).reduce(BigDecimal.ZERO, BigDecimal::add).abs()
-                    ))
-                    .toList();
-
-            // Step 5: Summary values
-            BigDecimal totalIncome = transactions.stream()
-                    .map(Transaction::getAmount)
-                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            BigDecimal totalExpenses = transactions.stream()
-                    .map(Transaction::getAmount)
-                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) < 0)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .abs();
-
-            BigDecimal netCashFlow = totalIncome.subtract(totalExpenses);
-
-            // Step 6: Daily totals
-            Map<Integer, BigDecimal> dailyTotals = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getDayOfMonth(),
-                            Collectors.mapping(Transaction::getAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
-                    ));
-
-            // Step 7: Category totals
-            Map<String, BigDecimal> categoryTotals = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getCategory().getName(),
-                            Collectors.mapping(Transaction::getAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
-                    ));
-
-            // Step 8: Mapping to DTO
-            List<TransactionDetailDTO> transactionDTOs = transactions.stream()
-                    .map(applicationMapper::toTransactionDetailDTO)
-                    .toList();
-
-            return new MonthlySummaryDTO(
-                    yearMonth.getMonthValue(),
-                    yearMonth.getYear(),
-                    yearMonth.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                    monthlyDetails,
-                    totalIncome,
-                    totalExpenses,
-                    netCashFlow,
-                    transactionDTOs,
-                    dailyTotals,
-                    categoryTotals
-            );
-
-        } catch (Exception ex) {
-            log.error("Error generating monthly summary", ex);
-            throw new RuntimeException("Failed to generate monthly summary", ex);
-        }
+        // 6. Return DTO
+        MonthlySummaryDTO result = new MonthlySummaryDTO();
+        result.setMonthlyDetails(monthlyDetails);
+        result.setTotalIncome(totalIncome);
+        result.setTotalExpenses(totalExpenses);
+        return result;
     }
 
     public YearlySummaryDTO getYearlySummary(int year) {
-        try {
-            log.info("Generating yearly summary for year {}", year);
+        // 1. Get all wallet UUIDs for the current user
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
+                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
 
-            User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        // 2. Define the year range (last 5 years up to the specified year)
+        int yearsToShow = 5;
+        int startYear = year - yearsToShow + 1;
 
-            List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                    .stream()
-                    .map(Wallet::getWalletID)
-                    .toList();
+        LocalDateTime startOfRange = LocalDateTime.of(startYear, 1, 1, 0, 0);
+        LocalDateTime endOfRange = LocalDateTime.of(year, 12, 31, 23, 59, 59, 999_000_000);
 
-            LocalDateTime startOfYear = LocalDate.of(year, 1, 1).atStartOfDay();
-            LocalDateTime endOfYear = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
+        // 3. Fetch transactions across that range for user's wallets
+        List<Transaction> allTransactions = transactionRepository
+                .findByWalletWalletIDInAndTransactionDateBetween(userWalletIds, startOfRange, endOfRange);
 
-            List<Transaction> transactions = transactionRepository.findAll()
-                    .stream()
-                    .filter(t -> userWalletIds.contains(t.getWallet().getWalletID()) &&
-                            !t.getTransactionDate().isBefore(startOfYear) &&
-                            !t.getTransactionDate().isAfter(endOfYear))
-                    .sorted(Comparator.comparing(Transaction::getTransactionDate))
-                    .toList();
+        // 4. Build YearlyDetailDTO list
+        List<YearlyDetailDTO> yearlyDetails = IntStream.rangeClosed(startYear, year)
+                .mapToObj(yr -> {
+                    List<Transaction> yearTxs = allTransactions.stream()
+                            .filter(t -> t.getTransactionDate().getYear() == yr)
+                            .toList();
 
-            // Yearly details
-            List<YearlyDetailDTO> yearlyDetails = transactions.stream()
-                    .collect(Collectors.groupingBy(t -> t.getTransactionDate().getYear()))
-                    .entrySet().stream()
-                    .map(e -> new YearlyDetailDTO(
-                            String.valueOf(e.getKey()),
-                            e.getValue().stream().map(Transaction::getAmount)
-                                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0).reduce(BigDecimal.ZERO, BigDecimal::add),
-                            e.getValue().stream().filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
-                                    .map(t -> t.getAmount().abs()).reduce(BigDecimal.ZERO, BigDecimal::add)
-                    )).toList();
+                    BigDecimal income = yearTxs.stream()
+                            .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                            .map(Transaction::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal totalIncome = transactions.stream()
-                    .map(Transaction::getAmount)
-                    .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal expense = yearTxs.stream()
+                            .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                            .map(Transaction::getAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add).abs();
 
-            BigDecimal totalExpenses = transactions.stream()
-                    .filter(t -> t.getAmount().compareTo(BigDecimal.ZERO) < 0)
-                    .map(t -> t.getAmount().abs()).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            BigDecimal netCashFlow = totalIncome.subtract(totalExpenses);
-
-            // Monthly totals
-            Map<String, BigDecimal> monthlyTotals = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getTransactionDate().getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                            Collectors.reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)
-                    ));
-
-            // Category totals
-            Map<String, BigDecimal> categoryTotals = transactions.stream()
-                    .collect(Collectors.groupingBy(
-                            t -> t.getCategory().getName(),
-                            Collectors.reducing(BigDecimal.ZERO, Transaction::getAmount, BigDecimal::add)
-                    ));
-
-            // Quarterly totals
-            Map<String, BigDecimal> quarterlyTotals = new HashMap<>();
-            quarterlyTotals.put("Q1", sumForQuarter(transactions, 1, 3));
-            quarterlyTotals.put("Q2", sumForQuarter(transactions, 4, 6));
-            quarterlyTotals.put("Q3", sumForQuarter(transactions, 7, 9));
-            quarterlyTotals.put("Q4", sumForQuarter(transactions, 10, 12));
-
-            List<TransactionDetailDTO> transactionDTOs = transactions.stream()
-                    .map(applicationMapper::toTransactionDetailDTO)
-                    .toList();
-
-            return new YearlySummaryDTO(
-                    year,
-                    yearlyDetails,
-                    totalIncome,
-                    totalExpenses,
-                    netCashFlow,
-                    transactionDTOs,
-                    monthlyTotals,
-                    categoryTotals,
-                    quarterlyTotals
-            );
-
-        } catch (Exception ex) {
-            log.error("Error generating yearly summary", ex);
-            throw new RuntimeException("Error generating yearly summary", ex);
-        }
-    }
-
-    private BigDecimal sumForQuarter(List<Transaction> transactions, int startMonth, int endMonth) {
-        return transactions.stream()
-                .filter(t -> {
-                    int month = t.getTransactionDate().getMonthValue();
-                    return month >= startMonth && month <= endMonth;
+                    YearlyDetailDTO detail = new YearlyDetailDTO();
+                    detail.setYear(String.valueOf(yr));
+                    detail.setIncome(income);
+                    detail.setExpense(expense);
+                    return detail;
                 })
+                .collect(Collectors.toList());
+
+        // 5. Compute total income and expense for the requested year
+        List<Transaction> currentYearTxs = allTransactions.stream()
+                .filter(t -> t.getTransactionDate().getYear() == year)
+                .toList();
+
+        BigDecimal totalIncome = currentYearTxs.stream()
+                .filter(t -> "income".equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = currentYearTxs.stream()
+                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).abs();
+
+        // 6. Create and return summary DTO
+        YearlySummaryDTO result = new YearlySummaryDTO();
+        result.setYearlyDetails(yearlyDetails);
+        result.setTotalIncome(totalIncome);
+        result.setTotalExpenses(totalExpenses);
+        return result;
     }
 }

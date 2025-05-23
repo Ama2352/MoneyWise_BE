@@ -14,23 +14,7 @@ import java.util.HashMap;
 @NoArgsConstructor
 @AllArgsConstructor
 public class YearlySummaryDTO {
-
-    private int year;
-
     private List<YearlyDetailDTO> yearlyDetails;
-
     private BigDecimal totalIncome;
-
     private BigDecimal totalExpenses;
-
-    private BigDecimal netCashFlow;
-
-    private List<TransactionDetailDTO> transactions = new ArrayList<>();
-
-    private Map<String, BigDecimal> monthlyTotals = new HashMap<>();
-
-    private Map<String, BigDecimal> categoryTotals = new HashMap<>();
-
-    private Map<String, BigDecimal> quarterlyTotals = new HashMap<>();
-
 }

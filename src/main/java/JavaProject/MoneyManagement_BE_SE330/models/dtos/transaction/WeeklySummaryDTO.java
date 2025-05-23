@@ -17,28 +17,7 @@ import java.util.HashMap;
 @AllArgsConstructor
 @Builder
 public class WeeklySummaryDTO {
-
-    private LocalDate startDate;
-
-    private LocalDate endDate;
-
-    private int weekNumber;
-
-    private int year;
-
     private List<WeeklyDetailDTO> weeklyDetails;
-
     private BigDecimal totalIncome;
-
     private BigDecimal totalExpenses;
-
-    private BigDecimal netCashFlow;
-
-    private List<TransactionDetailDTO> transactions = new ArrayList<>();
-
-    private Map<String, BigDecimal> dailyTotals = new HashMap<>();
-
-    private Map<String, BigDecimal> dailyIncomeTotals = new HashMap<>();
-
-    private Map<String, BigDecimal> dailyExpenseTotals = new HashMap<>();
 }
