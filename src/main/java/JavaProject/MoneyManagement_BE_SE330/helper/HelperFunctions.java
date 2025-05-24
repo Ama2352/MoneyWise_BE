@@ -12,5 +12,11 @@ public class HelperFunctions {
         return userRepository.findByUsername(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
+
+    public static User findUserByStringId(String userId, UserRepository userRepository) {
+        Long userLongId = Long.parseLong(userId);
+        return userRepository.findById(userLongId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
 }
 

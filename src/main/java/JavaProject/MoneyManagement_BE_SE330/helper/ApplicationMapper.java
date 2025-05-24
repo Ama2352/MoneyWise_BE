@@ -2,6 +2,9 @@ package JavaProject.MoneyManagement_BE_SE330.helper;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.CreateGroupDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.GroupDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.GroupMemberDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UpdateProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.CreateTransactionDTO;
@@ -10,10 +13,8 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionD
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.UpdateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.CreateWalletDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.WalletDTO;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Category;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Transaction;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Wallet;
+import JavaProject.MoneyManagement_BE_SE330.models.entities.*;
+import JavaProject.MoneyManagement_BE_SE330.models.enums.GroupRole;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -35,6 +36,15 @@ public interface ApplicationMapper {
     @Mapping(target = "enabled", constant = "true")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "avatarUrl", ignore = true)
+    @Mapping(target = "wallets", ignore = true)
+    @Mapping(target = "categories", ignore = true)
+    @Mapping(target = "friendRequestsSent", ignore = true)
+    @Mapping(target = "friendRequestsReceived", ignore = true)
+    @Mapping(target = "messagesSent", ignore = true)
+    @Mapping(target = "messagesReceived", ignore = true)
+    @Mapping(target = "createdGroups", ignore = true)
+    @Mapping(target = "groupMemberships", ignore = true)
     User toUserEntity(RegisterDTO dto);
     default Set<String> createDefaultRoles() {
         return Set.of("USER");
@@ -119,6 +129,32 @@ public interface ApplicationMapper {
 
     // Map User to UserProfileDTO
     @Mapping(target = "id", expression = "java(user.getId().toString())")
-    @Mapping(target = "displayName", expression = "java(user.getFirstName() + \" \" + user.getLastName())")
+    @Mapping(target = "displayName", source = "user", qualifiedByName = "fullName")
     UserProfileDTO toUserProfileDTO(User user);
+    
+    // Mapping for group
+    @Mapping(target = "groupId", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "members", ignore = true)
+    Group toGroupEntity(CreateGroupDTO dto);
+
+
+    @Mapping(target = "creatorId", expression = "java(group.getCreator().getId().toString())")
+    @Mapping(target = "creatorName", source = "group.creator", qualifiedByName = "fullName")
+    @Mapping(target = "role", expression = "java(JavaProject.MoneyManagement_BE_SE330.models.enums.GroupRole.ADMIN)")
+    @Mapping(target = "memberCount", source = "memberCount")
+    GroupDTO toGroupDTO(Group group, int memberCount);
+
+    @Named("fullName")
+    default String mapFullName(User user) {
+        return user.getFirstName() + " " + user.getLastName();
+    }
+
+    @Mapping(target = "userId", expression = "java(model.getUser().getId().toString())")
+    @Mapping(target = "displayName", source = "model.user", qualifiedByName = "fullName")
+    @Mapping(target = "avatarUrl", expression = "java(model.getUser().getAvatarUrl())")
+    GroupMemberDTO toGroupMemberDTO(GroupMember model);
+
 }

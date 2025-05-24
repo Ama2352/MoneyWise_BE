@@ -1,0 +1,8 @@
+Client-Side (e.g., JavaScript) Clients subscribe to WebSocket updates using a library like SockJS and STOMP:
+var sock = new SockJS('/ws');
+var stompClient = Stomp.over(sock);
+stompClient.connect({}, function (frame) {
+    stompClient.subscribe('/user/topic/group-created', function (message) {
+        console.log('New group created:', JSON.parse(message.body));
+    });
+});
