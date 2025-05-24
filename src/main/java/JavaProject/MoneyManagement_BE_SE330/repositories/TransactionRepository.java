@@ -17,9 +17,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t FROM Transaction t WHERE t.wallet.user = :user")
     List<Transaction> findAllByWalletUser(@Param("user") User user);
 
-    List<Transaction> findAllByWalletUserAndTransactionDateBetween(User currentUser, LocalDateTime startOfDay, LocalDateTime endOfDay);
-
-    List<Transaction> findByTransactionDateBetweenAndWalletWalletIDInOrderByTransactionDate(LocalDateTime startOfMonth, LocalDateTime endOfMonth, List<UUID> userWalletIds);
-
     List<Transaction> findByWalletWalletIDInAndTransactionDateBetween(List<UUID> walletIds, LocalDateTime startOfDay, LocalDateTime endOfDay);
 }

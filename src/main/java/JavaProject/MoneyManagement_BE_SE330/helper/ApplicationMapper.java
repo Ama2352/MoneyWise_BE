@@ -2,6 +2,8 @@ package JavaProject.MoneyManagement_BE_SE330.helper;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UpdateProfileDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.CreateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDetailDTO;
@@ -114,4 +116,9 @@ public interface ApplicationMapper {
         String lower = dayOfWeek.toString().toLowerCase(); // e.g. "monday"
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1); // "Monday"
     }
+
+    // Map User to UserProfileDTO
+    @Mapping(target = "id", expression = "java(user.getId().toString())")
+    @Mapping(target = "displayName", expression = "java(user.getFirstName() + \" \" + user.getLastName())")
+    UserProfileDTO toUserProfileDTO(User user);
 }

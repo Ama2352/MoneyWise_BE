@@ -1,77 +1,86 @@
 package JavaProject.MoneyManagement_BE_SE330.helper;
 
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.error.ValidationErrorResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex) {
-        ApiError error = new ApiError(404, ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    public ProblemDetail handleNotFound(ResourceNotFoundException ex, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        pd.setType(URI.create("https://tools.ietf.org/html/rfc9110#section-15.5.4"));
+        pd.setTitle(ex.getMessage());
+        pd.setProperty("traceId", request.getAttribute("traceId", WebRequest.SCOPE_REQUEST));
+        return pd;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMsg = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                .collect(Collectors.joining("; "));
-        ApiError error = new ApiError(400, "Validation failed: " + errorMsg);
-        return ResponseEntity.badRequest().body(error);
+    public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
+        Map<String, List<String>> errors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getField(),
+                        Collectors.mapping(e -> e.getDefaultMessage(), Collectors.toList())
+                ));
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        pd.setType(URI.create("https://tools.ietf.org/html/rfc9110#section-15.5.1"));
+        pd.setTitle("One or more validation errors occurred.");
+        pd.setProperty("errors", errors);
+        pd.setProperty("traceId", request.getAttribute("traceId", WebRequest.SCOPE_REQUEST));
+        return pd;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
-        ApiError error = new ApiError(403, "Access denied");
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        pd.setType(URI.create("https://tools.ietf.org/html/rfc9110#section-15.5.3"));
+        pd.setTitle("Access denied");
+        pd.setDetail(ex.getMessage());
+        pd.setProperty("traceId", request.getAttribute("traceId", WebRequest.SCOPE_REQUEST));
+        return pd;
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex) {
-        ApiError error = new ApiError(401, "Authentication failed: " + ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    public ProblemDetail handleAuthenticationException(AuthenticationException ex, WebRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        pd.setType(URI.create("https://tools.ietf.org/html/rfc9110#section-15.5.2"));
+        pd.setTitle("Authentication failed");
+        pd.setDetail(ex.getMessage());
+        pd.setProperty("traceId", request.getAttribute("traceId", WebRequest.SCOPE_REQUEST));
+        return pd;
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGenericException(Exception ex) {
-        // Log the exception stacktrace
+    public ProblemDetail handleGenericException(Exception ex, WebRequest request) {
         ex.printStackTrace();
-        ApiError error = new ApiError(500, "An unexpected error occurred");
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        pd.setType(URI.create("https://tools.ietf.org/html/rfc9110#section-15.6.1"));
+        pd.setTitle("An unexpected error occurred");
+        pd.setDetail(ex.getMessage());
+        pd.setProperty("traceId", request.getAttribute("traceId", WebRequest.SCOPE_REQUEST));
+        return pd;
     }
 
-    public static class ApiError {
-        private int status;
-        private String message;
-
-        public ApiError(int status, String message) {
-            this.status = status;
-            this.message = message;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(int status) {
-            this.status = status;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleValidationException(ValidationException ex) {
+        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
+                "One or more validation errors occurred.",
+                ex.getErrors()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
 }
-

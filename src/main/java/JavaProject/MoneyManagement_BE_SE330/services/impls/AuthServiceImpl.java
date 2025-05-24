@@ -7,6 +7,8 @@ import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
 import JavaProject.MoneyManagement_BE_SE330.services.AuthService;
 import JavaProject.MoneyManagement_BE_SE330.services.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +33,8 @@ public class AuthServiceImpl implements AuthService {
     public String authenticate(String email, String password) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new BadCredentialsException("Invalid email or password");
+
         }
         return jwtService.generateToken(userDetails);
     }

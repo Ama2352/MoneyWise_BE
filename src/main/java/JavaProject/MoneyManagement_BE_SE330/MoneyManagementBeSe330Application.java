@@ -1,6 +1,7 @@
 package JavaProject.MoneyManagement_BE_SE330;
 
 import JavaProject.MoneyManagement_BE_SE330.services.JwtService;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.boot.SpringApplication;
