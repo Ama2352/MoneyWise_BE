@@ -1,6 +1,7 @@
 package JavaProject.MoneyManagement_BE_SE330.models.entities;
 
 import JavaProject.MoneyManagement_BE_SE330.models.enums.GroupRole;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 

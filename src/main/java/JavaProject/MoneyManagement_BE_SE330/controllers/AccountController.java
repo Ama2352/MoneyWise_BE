@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -62,7 +63,7 @@ public class AccountController {
 
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/users/{userId}")
-    public ResponseEntity<UserProfileDTO> getOtherUserProfile(@PathVariable("userId") Long userId ) {
+    public ResponseEntity<UserProfileDTO> getOtherUserProfile(@PathVariable("userId") UUID userId ) {
         UserProfileDTO dto = userService.getUserProfile(userId);
         return ResponseEntity.ok(dto);
     }

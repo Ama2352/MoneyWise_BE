@@ -20,7 +20,7 @@ import java.time.YearMonth;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/Categories")
+@RequestMapping("/api/Calendar")
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Calendar")
 public class CalendarController {

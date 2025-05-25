@@ -4,19 +4,14 @@ import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
 import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.*;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Category;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Transaction;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.Wallet;
-import JavaProject.MoneyManagement_BE_SE330.repositories.CategoryRepository;
-import JavaProject.MoneyManagement_BE_SE330.repositories.TransactionRepository;
-import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
-import JavaProject.MoneyManagement_BE_SE330.repositories.WalletRepository;
+import JavaProject.MoneyManagement_BE_SE330.models.entities.*;
+import JavaProject.MoneyManagement_BE_SE330.repositories.*;
 import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,8 +32,11 @@ public class TransactionServiceImpl implements TransactionService {
     private final WalletRepository walletRepository;
     private final ApplicationMapper applicationMapper;
     private final UserRepository userRepository;
+    private final BudgetRepository budgetRepository;
+    private final SavingGoalRepository savingGoalRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransactionDTO> getAllTransactions() {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         return transactionRepository.findAllByWalletUser(currentUser)
@@ -48,6 +46,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransactionDTO> getTransactionsByWalletId(UUID walletId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         Wallet wallet = walletRepository.findById(walletId)
@@ -62,7 +61,9 @@ public class TransactionServiceImpl implements TransactionService {
                 .toList();
     }
 
+
     @Override
+    @Transactional(readOnly = true)
     public TransactionDTO getTransactionById(UUID transactionId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         Transaction transaction = transactionRepository.findById(transactionId)
@@ -76,6 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public TransactionDTO createTransaction(CreateTransactionDTO model) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
 
@@ -96,65 +98,235 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setCategory(category);
 
         transactionRepository.save(transaction);
+
+        // Update UserBudget for Expense transactions
+        if (Objects.equals(transaction.getType(), "expense")) {
+            List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                    transaction.getCategory(),
+                    transaction.getWallet(),
+                    transaction.getTransactionDate(),
+                    transaction.getTransactionDate()
+            );
+            if (!budgets.isEmpty()) {
+                budgetRepository.updateCurrentSpending(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getAmount(),
+                        transaction.getTransactionDate()
+                );
+            }
+        }
+
+        // Update UserSavingGoal for Income transactions
+        if (Objects.equals(transaction.getType(), "income")) {
+            List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                    transaction.getCategory(),
+                    transaction.getWallet(),
+                    transaction.getTransactionDate(),
+                    transaction.getTransactionDate()
+            );
+            if (!goals.isEmpty()) {
+                savingGoalRepository.updateSavedAmount(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getAmount(),
+                        transaction.getTransactionDate()
+                );
+            }
+        }
+
+        // Update Wallet Balance
+        BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
+                ? transaction.getAmount()
+                : transaction.getAmount().negate();
+        walletRepository.updateBalance(transaction.getWallet().getWalletID(), balanceChange);
+
         return applicationMapper.toTransactionDTO(transaction);
     }
 
     @Override
+    @Transactional
     public TransactionDTO updateTransaction(UpdateTransactionDTO model) {
-        var transaction = transactionRepository.findById(model.getTransactionID())
+        // Fetch existing transaction
+        Transaction transaction = transactionRepository.findById(model.getTransactionID())
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
-        // Update fields - assuming UpdateTransactionDTO has the fields
-        transaction.setAmount(model.getAmount());
-        transaction.setDescription(model.getDescription());
-        transaction.setTransactionDate(model.getTransactionDate());
-        transaction.setType(model.getType());
-
-        // Fetch Wallet entity by ID
-        Wallet wallet = walletRepository.findById(model.getWalletID())
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
-
-        // Fetch Category entity by ID
-        Category category = categoryRepository.findById(model.getCategoryID())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-
-        if(!transaction.getWallet().getUser().equals(currentUser)) {
+        if (!transaction.getWallet().getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not have access to update this transaction");
         }
 
-        if(!wallet.getUser().equals(currentUser)) {
+        // Fetch Wallet and Category for the updated values
+        Wallet wallet = walletRepository.findById(model.getWalletID())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
+        if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You cannot move transaction to a wallet you don't own");
         }
 
+        Category category = categoryRepository.findById(model.getCategoryID())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if (!category.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You cannot assign a category you don't own");
         }
 
-        // Set the references on your Transaction entity
+        // Check if relevant fields have changed
+        boolean hasChanges = !Objects.equals(transaction.getAmount(), model.getAmount()) ||
+                !Objects.equals(transaction.getCategory().getCategoryID(), model.getCategoryID()) ||
+                !Objects.equals(transaction.getWallet().getWalletID(), model.getWalletID()) ||
+                !Objects.equals(transaction.getTransactionDate(), model.getTransactionDate());
+
+        // Step 1: Reverse original effects if relevant fields changed
+        if (hasChanges) {
+            if (Objects.equals(transaction.getType(), "expense")) {
+                List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getTransactionDate(),
+                        transaction.getTransactionDate()
+                );
+                if (!budgets.isEmpty()) {
+                    budgetRepository.updateCurrentSpending(
+                            transaction.getCategory(),
+                            transaction.getWallet(),
+                            transaction.getAmount().negate(), // Reverse the amount
+                            transaction.getTransactionDate()
+                    );
+                }
+            } else if (Objects.equals(transaction.getType(), "income")) {
+                List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getTransactionDate(),
+                        transaction.getTransactionDate()
+                );
+                if (!goals.isEmpty()) {
+                    savingGoalRepository.updateSavedAmount(
+                            transaction.getCategory(),
+                            transaction.getWallet(),
+                            transaction.getAmount().negate(), // Reverse the amount
+                            transaction.getTransactionDate()
+                    );
+                }
+            }
+
+            // Reverse Wallet Balance
+            BigDecimal originalBalanceChange = Objects.equals(transaction.getType(), "income")
+                    ? transaction.getAmount().negate() // Undo income
+                    : transaction.getAmount(); // Undo expense
+            walletRepository.updateBalance(transaction.getWallet().getWalletID(), originalBalanceChange);
+        }
+
+        // Step 2: Update transaction fields (excluding Type)
+        transaction.setAmount(model.getAmount());
+        transaction.setDescription(model.getDescription());
+        transaction.setTransactionDate(model.getTransactionDate());
         transaction.setWallet(wallet);
         transaction.setCategory(category);
 
-        transactionRepository.save(transaction);
-        return applicationMapper.toTransactionDTO(transaction);
+        // Save updated transaction
+        Transaction updatedTransaction = transactionRepository.save(transaction);
+
+        // Step 3: Apply new effects if relevant fields changed
+        if (hasChanges) {
+            BigDecimal newBalanceChange;
+            if (Objects.equals(transaction.getType(), "expense")) {
+                List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getTransactionDate(),
+                        transaction.getTransactionDate()
+                );
+                if (!budgets.isEmpty()) {
+                    budgetRepository.updateCurrentSpending(
+                            transaction.getCategory(),
+                            transaction.getWallet(),
+                            transaction.getAmount(),
+                            transaction.getTransactionDate()
+                    );
+                }
+                newBalanceChange = transaction.getAmount().negate(); // Decrease balance
+            } else {
+                List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getTransactionDate(),
+                        transaction.getTransactionDate()
+                );
+                if (!goals.isEmpty()) {
+                    savingGoalRepository.updateSavedAmount(
+                            transaction.getCategory(),
+                            transaction.getWallet(),
+                            transaction.getAmount(),
+                            transaction.getTransactionDate()
+                    );
+                }
+                newBalanceChange = transaction.getAmount(); // Increase balance
+            }
+
+            // Update Wallet Balance
+            walletRepository.updateBalance(transaction.getWallet().getWalletID(), newBalanceChange);
+        }
+
+        return applicationMapper.toTransactionDTO(updatedTransaction);
     }
 
     @Override
+    @Transactional
     public UUID deleteTransactionById(UUID transactionId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
-        if(!transaction.getWallet().getUser().equals(currentUser)) {
+        if (!transaction.getWallet().getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not have access to delete this transaction");
         }
 
+        // Reverse effects on Budget or SavingGoal
+        if (Objects.equals(transaction.getType(), "expense")) {
+            List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                    transaction.getCategory(),
+                    transaction.getWallet(),
+                    transaction.getTransactionDate(),
+                    transaction.getTransactionDate()
+            );
+            if (!budgets.isEmpty()) {
+                budgetRepository.updateCurrentSpending(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getAmount().negate(),
+                        transaction.getTransactionDate()
+                );
+            }
+        } else if (Objects.equals(transaction.getType(), "income")) {
+            List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                    transaction.getCategory(),
+                    transaction.getWallet(),
+                    transaction.getTransactionDate(),
+                    transaction.getTransactionDate()
+            );
+            if (!goals.isEmpty()) {
+                savingGoalRepository.updateSavedAmount(
+                        transaction.getCategory(),
+                        transaction.getWallet(),
+                        transaction.getAmount().negate(),
+                        transaction.getTransactionDate()
+                );
+            }
+        }
+
+        // Reverse Wallet Balance
+        BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
+                ? transaction.getAmount().negate() // Undo income
+                : transaction.getAmount(); // Undo expense
+        walletRepository.updateBalance(transaction.getWallet().getWalletID(), balanceChange);
+
+        // Delete transaction
         transactionRepository.delete(transaction);
         return transactionId;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransactionDetailDTO> getTransactionsByDateRange(GetTransactionsByDateRangeDTO filter) {
         log.info("Fetching transactions from {} to {}", filter.getStartDate(), filter.getEndDate());
 
@@ -202,6 +374,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TransactionDetailDTO> searchTransactions(SearchTransactionsDTO filter) {
         log.info("Searching transactions with filters from {} to {}", filter.getStartDate(), filter.getEndDate());
 
@@ -266,6 +439,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryBreakdownDTO> getCategoryBreakdown(LocalDate startDate, LocalDate endDate) {
         try {
             log.info("Generating category breakdown for period {} to {}", startDate, endDate);
@@ -311,6 +485,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .map(entry -> {
                         String categoryName = entry.getKey();
                         List<Transaction> categoryTransactions = entry.getValue();
+                        Category category = categoryTransactions.getFirst().getCategory();
 
                         BigDecimal categoryIncome = categoryTransactions.stream()
                                 .map(Transaction::getAmount)
@@ -335,12 +510,27 @@ public class TransactionServiceImpl implements TransactionService {
                                 .multiply(BigDecimal.valueOf(100))
                                 .setScale(2, RoundingMode.HALF_UP);
 
+                        // Fetch Budget and SavingGoal
+                        List<Budget> budgets = budgetRepository.findByCategoryAndWalletUserAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                category, currentUser, endDate.atStartOfDay(), startDate.atStartOfDay());
+                        List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletUserAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                category, currentUser, endDate.atStartOfDay(), startDate.atStartOfDay());
+
+                        BigDecimal budgetLimit = budgets.isEmpty() ? BigDecimal.ZERO : budgets.getFirst().getLimitAmount();
+                        BigDecimal budgetSpending = budgets.isEmpty() ? BigDecimal.ZERO : budgets.getFirst().getCurrentSpending();
+                        BigDecimal goalTarget = goals.isEmpty() ? BigDecimal.ZERO : goals.getFirst().getTargetAmount();
+                        BigDecimal goalSaved = goals.isEmpty() ? BigDecimal.ZERO : goals.getFirst().getSavedAmount();
+
                         return new CategoryBreakdownDTO(
                                 categoryName,
                                 categoryIncome,
                                 categoryExpense,
                                 incomePercentage,
-                                expensePercentage
+                                expensePercentage,
+                                budgetLimit,
+                                budgetSpending,
+                                goalTarget,
+                                goalSaved
                         );
                     })
                     .sorted(Comparator.comparing(dto -> dto.getTotalIncome().add(dto.getTotalExpense()), Comparator.reverseOrder()))
@@ -352,6 +542,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public DailySummaryDTO getDailySummary(LocalDate date) {
         // 1) resolve user and their wallets
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
@@ -427,6 +619,8 @@ public class TransactionServiceImpl implements TransactionService {
         return summary;
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public WeeklySummaryDTO getWeeklySummary(LocalDate weekStartDate) {
         // 1. Get all wallet IDs for the user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
@@ -503,8 +697,8 @@ public class TransactionServiceImpl implements TransactionService {
         return result;
     }
 
-
-
+    @Override
+    @Transactional(readOnly = true)
     public MonthlySummaryDTO getMonthlySummary(YearMonth yearMonth) {
         // 1. Get wallet IDs for the user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
@@ -586,6 +780,8 @@ public class TransactionServiceImpl implements TransactionService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public YearlySummaryDTO getYearlySummary(int year) {
         // 1. Get all wallet UUIDs for the current user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);

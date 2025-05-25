@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public String updateUserAvatar(Long userId, MultipartFile file) throws Exception {
+    public String updateUserAvatar(UUID userId, MultipartFile file) throws Exception {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
@@ -52,7 +53,7 @@ public class UserServiceImpl implements UserService {
         return avatarUrl;
     }
 
-    public String getUserAvatar(Long userId) {
+    public String getUserAvatar(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
         return user.getAvatarUrl() != null ? user.getAvatarUrl() : getDefaultAvatarUrl();
@@ -68,7 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserProfileDTO getUserProfile(Long userId) {
+    public UserProfileDTO getUserProfile(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("\"User not found with ID: \" + userId)"));
         return applicationMapper.toUserProfileDTO(user);

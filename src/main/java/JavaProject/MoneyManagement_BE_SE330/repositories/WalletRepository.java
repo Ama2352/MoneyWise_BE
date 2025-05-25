@@ -3,7 +3,11 @@ package JavaProject.MoneyManagement_BE_SE330.repositories;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Wallet;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,4 +16,9 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     List<Wallet> findAllByUser(User user);
     Optional<Wallet> findByWalletIDAndUser(UUID walletID, User user);
     boolean existsByUser(User user);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Wallet w SET w.balance = w.balance + :amount WHERE w.walletID = :walletID")
+    void updateBalance(UUID walletID, BigDecimal amount);
 }

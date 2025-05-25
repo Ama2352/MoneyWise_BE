@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 @Embeddable
 @Data
@@ -14,8 +15,8 @@ import java.util.Objects;
 @AllArgsConstructor
 public class UserFriendId implements Serializable {
 
-    private Long userId;
-    private Long friendId;
+    private UUID userId;
+    private UUID friendId;
 
     // Override equals and hashCode for composite key equality
 

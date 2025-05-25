@@ -9,6 +9,7 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.AdminLeaveResult;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.services.GroupService;
 import JavaProject.MoneyManagement_BE_SE330.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,7 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/groups")
+@RequestMapping("/api/Groups")
 @Tag(name = "Groups")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
@@ -37,6 +38,10 @@ public class GroupsController {
     private final Logger logger = LoggerFactory.getLogger(GroupsController.class);
 
     @PostMapping
+    @Operation(
+        summary = "Creates a new group chat",
+        description = "Group creation data including name and optional member list"
+    )
     public ResponseEntity<GroupDTO> createGroup(@RequestBody @Valid CreateGroupDTO dto) {
         User currentUser = userService.getCurrentUser();
         GroupDTO group = groupService.createGroup(String.valueOf(currentUser.getId()), dto);
@@ -44,6 +49,7 @@ public class GroupsController {
     }
 
     @GetMapping
+    @Operation(summary = "Gets all groups the current user is a member of")
     public ResponseEntity<List<GroupDTO>> getUserGroups() {
         User currentUser = userService.getCurrentUser();
         List<GroupDTO> groups = groupService.getUserGroups(String.valueOf(currentUser.getId()));
@@ -51,6 +57,7 @@ public class GroupsController {
     }
 
     @GetMapping("/{groupId}/members")
+    @Operation(summary = "Gets all members of a group")
     public ResponseEntity<List<GroupMemberDTO>> getGroupMembers(@PathVariable UUID groupId) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -62,6 +69,7 @@ public class GroupsController {
     }
 
     @PostMapping("/{groupId}/members/{userId}")
+    @Operation(summary = "Adds a user to a group (admin only)")
     public ResponseEntity<Map<String, Boolean>> addUserToGroup(@PathVariable UUID groupId, @PathVariable String userId) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -73,6 +81,7 @@ public class GroupsController {
     }
 
     @DeleteMapping("/{groupId}/members/{userId}")
+    @Operation(summary = "Removes a user from a group (admin only, or self-removal)")
     public ResponseEntity<Map<String, Boolean>> removeUserFromGroup(@PathVariable UUID groupId, @PathVariable String userId) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -86,6 +95,7 @@ public class GroupsController {
     }
 
     @PutMapping("/{groupId}")
+    @Operation(summary = "Updates group information (admin only)")
     public ResponseEntity<Map<String, Boolean>> updateGroup(@PathVariable UUID groupId, @RequestBody @Valid UpdateGroupDTO dto) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -99,6 +109,7 @@ public class GroupsController {
     }
 
     @PostMapping("/{groupId}/admin-leave")
+    @Operation(summary = "Allows an admin to leave a group with option to delete")
     public ResponseEntity<AdminLeaveResult> adminLeaveGroup(@PathVariable UUID groupId, @RequestParam(defaultValue = "false") boolean deleteGroup) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -112,6 +123,7 @@ public class GroupsController {
     }
 
     @PostMapping("/{groupId}/members/{userId}/collaborator")
+    @Operation(summary = "Assigns collaborator role to a group member")
     public ResponseEntity<Map<String, Boolean>> assignCollaboratorRole(@PathVariable UUID groupId, @PathVariable String userId) {
         User currentUser = userService.getCurrentUser();
         try {
@@ -125,6 +137,7 @@ public class GroupsController {
     }
 
     @PostMapping("/{groupId}/leave")
+    @Operation(summary = "Allows a user to leave a group")
     public ResponseEntity<Map<String, Boolean>> leaveGroup(@PathVariable UUID groupId) {
         User currentUser = userService.getCurrentUser();
         try {

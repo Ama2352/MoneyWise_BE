@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class ImageServiceImpl implements ImageService {
@@ -24,7 +25,7 @@ public class ImageServiceImpl implements ImageService {
     private String uploadPreset;
 
     @Override
-    public String uploadImage(MultipartFile file, Long userId) throws Exception {
+    public String uploadImage(MultipartFile file, UUID userId) throws Exception {
         // Validate file
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Image file cannot be empty");

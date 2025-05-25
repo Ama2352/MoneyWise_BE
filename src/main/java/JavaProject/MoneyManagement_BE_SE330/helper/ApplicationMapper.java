@@ -140,7 +140,6 @@ public interface ApplicationMapper {
     @Mapping(target = "members", ignore = true)
     Group toGroupEntity(CreateGroupDTO dto);
 
-
     @Mapping(target = "creatorId", expression = "java(group.getCreator().getId().toString())")
     @Mapping(target = "creatorName", source = "group.creator", qualifiedByName = "fullName")
     @Mapping(target = "role", expression = "java(JavaProject.MoneyManagement_BE_SE330.models.enums.GroupRole.ADMIN)")

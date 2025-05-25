@@ -1,5 +1,6 @@
 package JavaProject.MoneyManagement_BE_SE330.models.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

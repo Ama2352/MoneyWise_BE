@@ -15,4 +15,8 @@ public class CategoryBreakdownDTO {
     private BigDecimal totalExpense;
     private BigDecimal incomePercentage;
     private BigDecimal expensePercentage;
+    private BigDecimal budgetLimit;
+    private BigDecimal budgetCurrentSpending;
+    private BigDecimal goalTarget;
+    private BigDecimal goalSaved;
 }
