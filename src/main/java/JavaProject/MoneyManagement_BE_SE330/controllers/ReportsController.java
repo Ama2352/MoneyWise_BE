@@ -45,7 +45,7 @@ public class ReportsController {
 
             String currencySymbol = "VND";
             if ("USD".equalsIgnoreCase(reportInfo.getCurrency())) {
-                currencySymbol = "$";
+                currencySymbol = "USD";
             }
             parameters.put("currencySymbol", currencySymbol);
 

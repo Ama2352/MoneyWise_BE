@@ -21,21 +21,21 @@
             <staticText>
                 <reportElement x="20" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                    <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Month]]></text>
             </staticText>
             <staticText>
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                    <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Income]]></text>
             </staticText>
             <staticText>
                 <reportElement x="340" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                    <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Expense]]></text>
             </staticText>
@@ -52,21 +52,21 @@
             <textField>
                 <reportElement x="20" y="5" width="160" height="20" forecolor="#2C3E50"/>
                 <textElement verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="10"/>
+                    <font fontName="Times New Roman" size="10"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{monthName}]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#27AE60"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="10"/>
+                    <font fontName="Times New Roman" size="10"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{income} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{income}) : new java.text.DecimalFormat("#,##0").format($F{income})) : "0"]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="340" y="5" width="160" height="20" forecolor="#E74C3C"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="DejaVu Sans" size="10"/>
+                    <font fontName="Times New Roman" size="10"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{expense} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{expense}) : new java.text.DecimalFormat("#,##0").format($F{expense})) : "0"]]></textFieldExpression>
             </textField>
