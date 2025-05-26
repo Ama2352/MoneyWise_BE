@@ -20,19 +20,12 @@
                 </graphicElement>
             </rectangle>
             <staticText>
-                <reportElement x="0" y="15" width="555" height="40" forecolor="#FFFFFF"/>
+                <reportElement x="0" y="0" width="555" height="100" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="24" isBold="true"/>
                 </textElement>
                 <text><![CDATA[YEARLY SUMMARY]]></text>
             </staticText>
-            <textField>
-                <reportElement x="0" y="55" width="555" height="30" forecolor="#ECF0F1"/>
-                <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="12" isItalic="true"/>
-                </textElement>
-                <textFieldExpression><![CDATA["Reporting Period: " + $P{startDate}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " - " + $P{endDate}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))]]></textFieldExpression>
-            </textField>
         </band>
     </title>
     <detail>
