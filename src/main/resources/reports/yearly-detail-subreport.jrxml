@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="YearlyDetailSubreport" pageWidth="555" pageHeight="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" whenNoDataType="AllSectionsNoDetail">
+
+    <parameter name="currencySymbol" class="java.lang.String">
+        <defaultValueExpression><![CDATA["VND"]]></defaultValueExpression>
+    </parameter>
+    <field name="year" class="java.lang.String"/>
+    <field name="income" class="java.math.BigDecimal"/>
+    <field name="expense" class="java.math.BigDecimal"/>
+    <columnHeader>
+        <band height="30">
+            <rectangle>
+                <reportElement x="0" y="0" width="510" height="30" backcolor="#34495E"/>
+                <graphicElement>
+                    <pen lineWidth="0"/>
+                </graphicElement>
+            </rectangle>
+            <staticText>
+                <reportElement x="20" y="5" width="160" height="20" forecolor="#FFFFFF"/>
+                <textElement verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Year]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="180" y="5" width="160" height="20" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Income]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="340" y="5" width="160" height="20" forecolor="#FFFFFF"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="12" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Expense]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="30">
+            <rectangle>
+                <reportElement x="0" y="0" width="510" height="30" backcolor="#F8F9FA"/>
+                <graphicElement>
+                    <pen lineWidth="1" lineColor="#E9ECEF"/>
+                </graphicElement>
+            </rectangle>
+            <textField>
+                <reportElement x="20" y="5" width="160" height="20" forecolor="#2C3E50"/>
+                <textElement verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="10"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{year}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="180" y="5" width="160" height="20" forecolor="#27AE60"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="10"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{income} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{income}) : new java.text.DecimalFormat("#,##0").format($F{income})) : "0"]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="340" y="5" width="160" height="20" forecolor="#E74C3C"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="DejaVu Sans" size="10"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{expense} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{expense}) : new java.text.DecimalFormat("#,##0").format($F{expense})) : "0"]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="29" width="510" height="1"/>
+                <graphicElement>
+                    <pen lineWidth="0.5" lineColor="#E9ECEF"/>
+                </graphicElement>
+            </line>
+        </band>
+    </detail>
+</jasperReport>

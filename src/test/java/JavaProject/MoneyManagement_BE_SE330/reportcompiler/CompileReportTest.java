@@ -10,9 +10,15 @@ public class CompileReportTest {
 
     public static void main(String[] args) throws JRException {
         List<String> reportFiles = Arrays.asList(
-                "monthly_summary.jrxml",
-                "weekly_summary.jrxml",
-                "yearly_summary.jrxml"
+                "cash-flow.jrxml",
+                "category-breakdown.jrxml",
+                "daily-summary.jrxml",
+                "monthly-detail-subreport.jrxml",
+                "weekly-detail-subreport.jrxml",
+                "yearly-detail-subreport.jrxml",
+                "monthly-summary.jrxml",
+                "weekly-summary.jrxml",
+                "yearly-summary.jrxml"
         );
 
         String inputDir = "src/main/resources/reports/";
