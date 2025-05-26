@@ -1,20 +1,23 @@
 package JavaProject.MoneyManagement_BE_SE330.config;
 
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Configuration
 public class JacksonConfig {
-    private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jacksonCustomizer() {
-        return builder -> builder
-                .serializerByType(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT)));
+    public Jackson2ObjectMapperBuilder jacksonBuilder() {
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(LocalDateTime.class, new CustomLocalDateTimeSerializer());
+        javaTimeModule.addDeserializer(LocalDateTime.class, new FlexibleLocalDateTimeDeserializer());
+
+        return new Jackson2ObjectMapperBuilder()
+                .modules(javaTimeModule)
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 }

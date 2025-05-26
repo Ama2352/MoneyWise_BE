@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Category {
 
     @Id
-    private UUID categoryID;
+    private UUID categoryId;
 
     @Column(nullable = false)
     private String name;
@@ -39,8 +39,8 @@ public class Category {
 
     @PrePersist
     protected void onCreate() {
-        if(categoryID == null) {
-            categoryID = UUID.randomUUID();
+        if(categoryId == null) {
+            categoryId = UUID.randomUUID();
         }
         if(createdAt == null) {
             createdAt = LocalDateTime.now();

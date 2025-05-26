@@ -65,11 +65,11 @@ public class SeedConfig {
                 boolean userHasWallets = walletRepository.existsByUser(user);
                 if (!userHasWallets) {
                     List<Wallet> wallets = List.of(
-                            new Wallet("Cash", new BigDecimal("100.00"), user),
-                            new Wallet("Bank Account", new BigDecimal("2500.50"), user),
-                            new Wallet("Credit Card", new BigDecimal("0.00"), user),
-                            new Wallet("Savings", new BigDecimal("10000.00"), user),
-                            new Wallet("Investment", new BigDecimal("15000.75"), user)
+                            new Wallet("Cash", new BigDecimal("100000"), user),
+                            new Wallet("Bank Account", new BigDecimal("2500000"), user),
+                            new Wallet("Credit Card", new BigDecimal("10000000"), user),
+                            new Wallet("Savings", new BigDecimal("500000"), user),
+                            new Wallet("Investment", new BigDecimal("70000"), user)
                     );
                     walletRepository.saveAll(wallets);
                     System.out.println("✅ Wallets seeded for user " + user.getUsername());

@@ -1,12 +1,16 @@
 package JavaProject.MoneyManagement_BE_SE330.helper;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.CreateBudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.UpdateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.CreateGroupDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.GroupDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.GroupMemberDTO;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UpdateProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.CreateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDetailDTO;
@@ -14,14 +18,11 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.UpdateTransa
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.CreateWalletDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.wallet.WalletDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.*;
-import JavaProject.MoneyManagement_BE_SE330.models.enums.GroupRole;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.time.DayOfWeek;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,63 +52,67 @@ public interface ApplicationMapper {
     }
 
     // Category Mappings
+    @Mapping(target = "categoryID", source = "categoryId")
     CategoryDTO toCategoryDTO(Category model);
 
-    @Mapping(target = "categoryID", ignore = true)
+    @Mapping(target = "categoryId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "transactions", ignore = true)
     Category toCategoryEntity(CreateCategoryDTO model);
 
     // Wallet Mappings
+    @Mapping(target = "walletID", source = "walletId")
     WalletDTO toWalletDTO(Wallet model);
 
+    @Mapping(target = "walletId", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "transactions", ignore = true)
     Wallet toWalletEntity(CreateWalletDTO model);
 
     // Transaction Mappings
-    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletID")
-    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryID")
+    @Mapping(target = "transactionID", source = "transactionId")
+    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletId")
+    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryId")
     TransactionDTO toTransactionDTO(Transaction model);
 
-    @Named("extractWalletID")
-    default UUID extractWalletID(Wallet wallet) {
-        return wallet.getWalletID();
+    @Named("extractWalletId")
+    default UUID extractWalletId(Wallet wallet) {
+        return wallet.getWalletId();
     }
-    @Named("extractCategoryID")
-    default UUID extractCategoryID(Category category) {
-        return category.getCategoryID();
+    @Named("extractCategoryId")
+    default UUID extractCategoryId(Category category) {
+        return category.getCategoryId();
     }
 
-    @Mapping(target = "transactionID", ignore = true) // generated on persist
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromID")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromID")
+    @Mapping(target = "transactionId", ignore = true) // generated on persist
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
     Transaction toTransactionEntity(CreateTransactionDTO model);
 
-    @Mapping(target = "transactionID", ignore = true) // keep existing ID
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromID")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromID")
+    @Mapping(target = "transactionId", ignore = true) // keep existing ID
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
     Transaction toTransactionEntity(UpdateTransactionDTO model);
 
     // Helper mappings to convert UUIDs to entities with only IDs set (for reference)
-    @Named("mapWalletFromID")
-    default Wallet mapWalletFromID(UUID walletID) {
-        if (walletID == null) {
+    @Named("mapWalletFromId")
+    default Wallet mapWalletFromId(UUID walletId) {
+        if (walletId == null) {
             return null;
         }
         Wallet wallet = new Wallet();
-        wallet.setWalletID(walletID);
+        wallet.setWalletId(walletId);
         return wallet;
     }
 
-    @Named("mapCategoryFromID")
-    default Category mapCategoryFromID(UUID categoryID) {
-        if (categoryID == null) {
+    @Named("mapCategoryFromId")
+    default Category mapCategoryFromId(UUID categoryId) {
+        if (categoryId == null) {
             return null;
         }
         Category category = new Category();
-        category.setCategoryID(categoryID);
+        category.setCategoryId(categoryId);
         return category;
     }
 
@@ -117,8 +122,8 @@ public interface ApplicationMapper {
     @Mapping(target = "dayOfWeek", expression = "java(capitalizeDayOfWeek(transaction.getTransactionDate().getDayOfWeek()))")
     @Mapping(target = "month", expression = "java(transaction.getTransactionDate().getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH))")
     @Mapping(target = "category", source = "category.name")
-    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryID")
-    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletID")
+    @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryId")
+    @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletId")
     @Mapping(target = "walletName", source = "wallet.walletName")
     TransactionDetailDTO toTransactionDetailDTO(Transaction transaction);
 
@@ -156,4 +161,31 @@ public interface ApplicationMapper {
     @Mapping(target = "avatarUrl", expression = "java(model.getUser().getAvatarUrl())")
     GroupMemberDTO toGroupMemberDTO(GroupMember model);
 
+    // Mapping for budget
+    @Mapping(target = "categoryId", expression = "java(budget.getCategory().getCategoryId())")
+    @Mapping(target = "walletId", expression = "java(budget.getWallet().getWalletId())")
+    @Mapping(target = "usagePercentage", ignore = true)
+    @Mapping(target = "progressStatus", ignore = true)
+    @Mapping(target = "notification", ignore = true)
+    BudgetDTO toBudgetDTO(Budget budget);
+
+    @Mapping(target = "budgetId", ignore = true)
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "createdAt", ignore = true)
+    Budget toBudgetEntity(CreateBudgetDTO dto);
+
+    // Mapping for saving goal
+    @Mapping(target = "categoryId", expression = "java(model.getCategory().getCategoryId())")
+    @Mapping(target = "walletId", expression = "java(model.getWallet().getWalletId())")
+    @Mapping(target = "savedPercentage", ignore = true)
+    @Mapping(target = "progressStatus", ignore = true)
+    @Mapping(target = "notification", ignore = true)
+    SavingGoalDTO toSavingGoalDTO(SavingGoal model);
+
+    @Mapping(target = "savingGoalId", ignore = true)
+    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "createdAt", ignore = true)
+    SavingGoal toSavingGoalEntity(CreateSavingGoalDTO dto);
 }

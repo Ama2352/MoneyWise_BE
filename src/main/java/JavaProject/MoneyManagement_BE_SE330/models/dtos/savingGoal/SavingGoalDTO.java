@@ -1,4 +1,4 @@
-package JavaProject.MoneyManagement_BE_SE330.models.dtos.budget;
+package JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,17 +11,17 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BudgetDTO {
-    private UUID budgetId;
+public class SavingGoalDTO {
+    private UUID savingGoalId;
     private UUID categoryId;
     private UUID walletId;
     private String description;
-    private BigDecimal limitAmount;
-    private BigDecimal currentSpending;
+    private BigDecimal targetAmount;
+    private BigDecimal savedAmount;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
-    private BigDecimal usagePercentage = BigDecimal.ZERO;
+    private BigDecimal savedPercentage = BigDecimal.ZERO;
     private String progressStatus = "Safe";
     private String notification;
 }

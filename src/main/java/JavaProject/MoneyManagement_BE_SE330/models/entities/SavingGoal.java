@@ -35,7 +35,7 @@ public class SavingGoal {
     private BigDecimal targetAmount;
 
     @Column(nullable = false)
-    private BigDecimal savedAmount;
+    private BigDecimal savedAmount = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private LocalDateTime startDate;

@@ -18,7 +18,7 @@ public class SearchTransactionsDTO {
     @NotNull(message = "EndDate must not be null")
     private LocalDate endDate;
 
-    @Pattern(regexp = "income|expense", message = "Type must be either 'income' or 'expense'")
+    @Pattern(regexp = "Income|Expense", flags = Pattern.Flag.CASE_INSENSITIVE)
     private String type;
 
     private String category;

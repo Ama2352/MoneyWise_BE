@@ -14,11 +14,11 @@ import java.util.UUID;
 
 public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     List<Wallet> findAllByUser(User user);
-    Optional<Wallet> findByWalletIDAndUser(UUID walletID, User user);
+    Optional<Wallet> findByWalletIdAndUser(UUID walletId, User user);
     boolean existsByUser(User user);
 
     @Modifying
     @Transactional
-    @Query("UPDATE Wallet w SET w.balance = w.balance + :amount WHERE w.walletID = :walletID")
-    void updateBalance(UUID walletID, BigDecimal amount);
+    @Query("UPDATE Wallet w SET w.balance = w.balance + :amount WHERE w.walletId = :walletId")
+    void updateBalance(UUID walletId, BigDecimal amount);
 }

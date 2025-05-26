@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
-    List<Transaction> findByWalletWalletID(UUID walletID);
+    List<Transaction> findByWalletWalletId(UUID walletId);
 
     // Find all transactions for every wallet that belongs to the given user.
     @Query("SELECT t FROM Transaction t WHERE t.wallet.user = :user")
     List<Transaction> findAllByWalletUser(@Param("user") User user);
 
-    List<Transaction> findByWalletWalletIDInAndTransactionDateBetween(List<UUID> walletIds, LocalDateTime startOfDay, LocalDateTime endOfDay);
+    List<Transaction> findByWalletWalletIdInAndTransactionDateBetween(List<UUID> walletIds, LocalDateTime startOfDay, LocalDateTime endOfDay);
 }

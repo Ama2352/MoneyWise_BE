@@ -28,5 +28,5 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
     List<Budget> findByCategoryAndWalletUserAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             Category category, User user, LocalDateTime startDate, LocalDateTime endDate);
 
-
+    List<Budget> findByWalletUser(User user);
 }

@@ -35,7 +35,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDTO getCategoryById(UUID categoryId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Category category = categoryRepository.findByCategoryIDAndUser(categoryId, currentUser)
+        Category category = categoryRepository.findByCategoryIdAndUser(categoryId, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         return applicationMapper.toCategoryDTO(category);
     }
@@ -62,7 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public UUID deleteCategory(UUID categoryId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Category category = categoryRepository.findByCategoryIDAndUser(categoryId, currentUser)
+        Category category = categoryRepository.findByCategoryIdAndUser(categoryId, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         categoryRepository.delete(category);
         return categoryId;

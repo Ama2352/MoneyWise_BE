@@ -16,7 +16,7 @@ public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID messageID;
+    private UUID messageId;
 
     @Column(nullable = false)
     private String content;

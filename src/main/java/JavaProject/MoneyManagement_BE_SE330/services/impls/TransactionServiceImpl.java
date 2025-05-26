@@ -55,7 +55,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not have access to this wallet's transactions");
         }
-        return transactionRepository.findByWalletWalletID(walletId)
+        return transactionRepository.findByWalletWalletId(walletId)
                 .stream()
                 .map(applicationMapper::toTransactionDTO)
                 .toList();
@@ -139,7 +139,7 @@ public class TransactionServiceImpl implements TransactionService {
         BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
                 ? transaction.getAmount()
                 : transaction.getAmount().negate();
-        walletRepository.updateBalance(transaction.getWallet().getWalletID(), balanceChange);
+        walletRepository.updateBalance(transaction.getWallet().getWalletId(), balanceChange);
 
         return applicationMapper.toTransactionDTO(transaction);
     }
@@ -171,8 +171,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Check if relevant fields have changed
         boolean hasChanges = !Objects.equals(transaction.getAmount(), model.getAmount()) ||
-                !Objects.equals(transaction.getCategory().getCategoryID(), model.getCategoryID()) ||
-                !Objects.equals(transaction.getWallet().getWalletID(), model.getWalletID()) ||
+                !Objects.equals(transaction.getCategory().getCategoryId(), model.getCategoryID()) ||
+                !Objects.equals(transaction.getWallet().getWalletId(), model.getWalletID()) ||
                 !Objects.equals(transaction.getTransactionDate(), model.getTransactionDate());
 
         // Step 1: Reverse original effects if relevant fields changed
@@ -213,7 +213,7 @@ public class TransactionServiceImpl implements TransactionService {
             BigDecimal originalBalanceChange = Objects.equals(transaction.getType(), "income")
                     ? transaction.getAmount().negate() // Undo income
                     : transaction.getAmount(); // Undo expense
-            walletRepository.updateBalance(transaction.getWallet().getWalletID(), originalBalanceChange);
+            walletRepository.updateBalance(transaction.getWallet().getWalletId(), originalBalanceChange);
         }
 
         // Step 2: Update transaction fields (excluding Type)
@@ -264,7 +264,7 @@ public class TransactionServiceImpl implements TransactionService {
             }
 
             // Update Wallet Balance
-            walletRepository.updateBalance(transaction.getWallet().getWalletID(), newBalanceChange);
+            walletRepository.updateBalance(transaction.getWallet().getWalletId(), newBalanceChange);
         }
 
         return applicationMapper.toTransactionDTO(updatedTransaction);
@@ -318,7 +318,7 @@ public class TransactionServiceImpl implements TransactionService {
         BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
                 ? transaction.getAmount().negate() // Undo income
                 : transaction.getAmount(); // Undo expense
-        walletRepository.updateBalance(transaction.getWallet().getWalletID(), balanceChange);
+        walletRepository.updateBalance(transaction.getWallet().getWalletId(), balanceChange);
 
         // Delete transaction
         transactionRepository.delete(transaction);
@@ -382,7 +382,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
                 .stream()
-                .map(Wallet::getWalletID)
+                .map(Wallet::getWalletId)
                 .toList();
 
         LocalDateTime startDateTime = filter.getStartDate().atStartOfDay();
@@ -449,14 +449,14 @@ public class TransactionServiceImpl implements TransactionService {
             // Get all wallets owned by the current user
             List<Wallet> userWallets = walletRepository.findAllByUser(currentUser);
             Set<UUID> userWalletIds = userWallets.stream()
-                    .map(Wallet::getWalletID)
+                    .map(Wallet::getWalletId)
                     .collect(Collectors.toSet());
 
             // Fetch transactions filtered by date and wallet ownership
             List<Transaction> transactions = transactionRepository.findAllByWalletUser(currentUser).stream()
                     .filter(t -> !t.getTransactionDate().toLocalDate().isBefore(startDate) &&
                             !t.getTransactionDate().toLocalDate().isAfter(endDate) &&
-                            userWalletIds.contains(t.getWallet().getWalletID()))
+                            userWalletIds.contains(t.getWallet().getWalletId()))
                     .toList();
 
             // Separate income and expenses
@@ -550,7 +550,7 @@ public class TransactionServiceImpl implements TransactionService {
         List<UUID> walletIds = walletRepository
                 .findAllByUser(currentUser)
                 .stream()
-                .map(Wallet::getWalletID)
+                .map(Wallet::getWalletId)
                 .toList();
 
         // 2) define day‐bounds
@@ -559,7 +559,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 3) fetch daily transactions (for totals)
         List<Transaction> dailyTxs = transactionRepository
-                .findByWalletWalletIDInAndTransactionDateBetween(
+                .findByWalletWalletIdInAndTransactionDateBetween(
                         walletIds, startOfDay, endOfDay);
 
         // 4) compute totalIncome & totalExpenses by type
@@ -581,7 +581,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 6) fetch week transactions (for dailyDetails)
         List<Transaction> weekTxs = transactionRepository
-                .findByWalletWalletIDInAndTransactionDateBetween(
+                .findByWalletWalletIdInAndTransactionDateBetween(
                         walletIds, weekStartDT, weekEndDT);
 
         // 7) group by DayOfWeek
@@ -625,7 +625,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 1. Get all wallet IDs for the user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
+                .stream().map(Wallet::getWalletId).collect(Collectors.toList());
 
         if (userWalletIds.isEmpty()) {
             // No wallets -> empty summary
@@ -646,7 +646,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 4. Fetch all transactions in the expanded range
         List<Transaction> allMonthTransactions = transactionRepository
-                .findByWalletWalletIDInAndTransactionDateBetween(
+                .findByWalletWalletIdInAndTransactionDateBetween(
                         userWalletIds,
                         firstWeekStart.atStartOfDay(),
                         lastWeekEnd.atStartOfDay()
@@ -703,7 +703,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 1. Get wallet IDs for the user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
+                .stream().map(Wallet::getWalletId).collect(Collectors.toList());
 
         if (userWalletIds.isEmpty()) {
             MonthlySummaryDTO empty = new MonthlySummaryDTO();
@@ -719,7 +719,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 3. Fetch all transactions for the year for the user's wallets
         List<Transaction> yearTransactions = transactionRepository
-                .findByWalletWalletIDInAndTransactionDateBetween(
+                .findByWalletWalletIdInAndTransactionDateBetween(
                         userWalletIds,
                         startOfYear.atStartOfDay(),
                         endOfYear.atTime(LocalTime.MAX)
@@ -786,7 +786,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 1. Get all wallet UUIDs for the current user
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                .stream().map(Wallet::getWalletID).collect(Collectors.toList());
+                .stream().map(Wallet::getWalletId).collect(Collectors.toList());
 
         // 2. Define the year range (last 5 years up to the specified year)
         int yearsToShow = 5;
@@ -797,7 +797,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 3. Fetch transactions across that range for user's wallets
         List<Transaction> allTransactions = transactionRepository
-                .findByWalletWalletIDInAndTransactionDateBetween(userWalletIds, startOfRange, endOfRange);
+                .findByWalletWalletIdInAndTransactionDateBetween(userWalletIds, startOfRange, endOfRange);
 
         // 4. Build YearlyDetailDTO list
         List<YearlyDetailDTO> yearlyDetails = IntStream.rangeClosed(startYear, year)

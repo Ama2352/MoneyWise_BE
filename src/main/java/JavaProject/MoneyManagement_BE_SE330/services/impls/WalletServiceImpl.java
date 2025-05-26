@@ -38,7 +38,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public WalletDTO getWalletById(UUID walletId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Wallet wallet = walletRepository.findByWalletIDAndUser(walletId, currentUser)
+        Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         return applicationMapper.toWalletDTO(wallet);
     }
@@ -67,7 +67,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public UUID deleteWalletById(UUID walletId) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        Wallet wallet = walletRepository.findByWalletIDAndUser(walletId, currentUser)
+        Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, currentUser)
                         .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         walletRepository.delete(wallet);
         return walletId;

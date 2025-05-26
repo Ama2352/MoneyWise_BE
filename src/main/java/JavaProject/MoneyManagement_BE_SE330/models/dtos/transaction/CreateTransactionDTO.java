@@ -30,7 +30,7 @@ public class CreateTransactionDTO {
     @NotNull(message = "WalletID must not be null")
     private UUID walletID;
 
-    @Pattern(regexp = "income|expense", message = "Type must be either 'income' or 'expense'")
+    @Pattern(regexp = "Income|Expense", flags = Pattern.Flag.CASE_INSENSITIVE)
     @NotNull(message = "Type must not be null")
     private String type;
 }

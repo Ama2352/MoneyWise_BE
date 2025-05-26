@@ -35,7 +35,7 @@ public class Budget {
     private BigDecimal limitAmount;
 
     @Column(nullable = false)
-    private BigDecimal currentSpending;
+    private BigDecimal currentSpending = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private LocalDateTime startDate;
