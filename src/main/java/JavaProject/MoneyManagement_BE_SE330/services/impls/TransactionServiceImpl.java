@@ -489,13 +489,13 @@ public class TransactionServiceImpl implements TransactionService {
                         Category category = categoryTransactions.getFirst().getCategory();
 
                         BigDecimal categoryIncome = categoryTransactions.stream()
+                                .filter(t -> "income".equalsIgnoreCase(t.getType()))
                                 .map(Transaction::getAmount)
-                                .filter(amount -> amount.compareTo(BigDecimal.ZERO) > 0)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         BigDecimal categoryExpense = categoryTransactions.stream()
+                                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
                                 .map(Transaction::getAmount)
-                                .filter(amount -> amount.compareTo(BigDecimal.ZERO) < 0)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                                 .abs();
 

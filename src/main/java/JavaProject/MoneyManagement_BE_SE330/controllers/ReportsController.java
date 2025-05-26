@@ -2,6 +2,7 @@ package JavaProject.MoneyManagement_BE_SE330.controllers;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
+import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public class ReportsController {
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/generate")
-    public ResponseEntity<ByteArrayResource> generateReport(@RequestBody ReportInfoDTO reportInfo) {
+    public ResponseEntity<ByteArrayResource> generateReport(@Valid @RequestBody ReportInfoDTO reportInfo) {
         try {
             // Create data
             Object reportData = transactionService.generateReportData(reportInfo);

@@ -43,36 +43,32 @@ public class DataSeeder {
         // Tạo Test User
         System.out.println("[DataSeeder] Creating test user...");
         User user = new User();
-        user.setFirstName("Hi");
-        user.setLastName("User");
-        user.setUsername("hi@example.com");
-        user.setEmail("hi@example.com");
+        user.setFirstName("Hello");
+        user.setLastName("World");
+        user.setEmail("helloworld@example.com");
+        user.setUsername("helloworld@example.com");
         user.setPassword(passwordEncoder.encode("Test@123"));
         user.setRoles(Set.of("USER"));
         user.setEnabled(true);
         userRepository.save(user);
         System.out.println("[DataSeeder] Test user saved.");
 
-        // Tạo Categories
+        // Tạo Categories (single list, no separation of expense/income)
         System.out.println("[DataSeeder] Creating categories...");
-        List<Category> expenseCategories = Arrays.asList(
+        List<Category> categories = Arrays.asList(
                 new Category("Food & Dining", user),
                 new Category("Transportation", user),
                 new Category("Entertainment", user),
                 new Category("Housing", user),
                 new Category("Utilities", user),
-                new Category("Shopping", user)
-        );
-
-        List<Category> incomeCategories = Arrays.asList(
+                new Category("Shopping", user),
                 new Category("Salary", user),
                 new Category("Freelance", user),
                 new Category("Gifts", user),
                 new Category("Investments", user)
         );
 
-        categoryRepository.saveAll(expenseCategories);
-        categoryRepository.saveAll(incomeCategories);
+        categoryRepository.saveAll(categories);
         System.out.println("[DataSeeder] Categories saved.");
 
         List<Category> allCategories = categoryRepository.findAll();
@@ -86,19 +82,27 @@ public class DataSeeder {
             Wallet wallet = new Wallet(walletName, BigDecimal.ZERO, user);
             walletRepository.save(wallet);
 
-            int transactionCount = random.nextInt(6) + 5; // 5-10
+            int transactionCount = random.nextInt(11) + 20; // 20-30 transactions
             System.out.println("[DataSeeder] Creating " + transactionCount + " transactions for wallet: " + walletName);
 
             for (int i = 0; i < transactionCount; i++) {
                 Category category = allCategories.get(random.nextInt(allCategories.size()));
-                boolean isExpense = expenseCategories.stream().anyMatch(c -> c.getName().equals(category.getName()));
+                // Randomly decide if this is an expense or income transaction
+                boolean isExpense = random.nextBoolean(); // 50% chance for expense or income
 
+                // Set amount: positive for income, negative for expense
                 BigDecimal amount = isExpense
-                        ? new BigDecimal(random.nextInt(451) + 50)
-                        : new BigDecimal(random.nextInt(901) + 100);
+                        ? new BigDecimal(random.nextInt(451) + 50).negate() // -50 to -500
+                        : new BigDecimal(random.nextInt(901) + 100); // 100 to 1000
 
-                int day = random.nextInt(31) + 1;
-                LocalDateTime date = LocalDateTime.of(2025, 1, day, random.nextInt(24), random.nextInt(60));
+                // Random date from 01/01/2024 to current time
+                LocalDateTime startDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+                LocalDateTime endDate = LocalDateTime.now();
+
+                long startEpoch = startDate.toEpochSecond(java.time.ZoneOffset.UTC);
+                long endEpoch = endDate.toEpochSecond(java.time.ZoneOffset.UTC);
+                long randomEpoch = startEpoch + (long)(random.nextDouble() * (endEpoch - startEpoch));
+                LocalDateTime date = LocalDateTime.ofEpochSecond(randomEpoch, 0, java.time.ZoneOffset.UTC);
 
                 Transaction transaction = new Transaction();
                 transaction.setWallet(wallet);
@@ -110,14 +114,15 @@ public class DataSeeder {
 
                 try {
                     transactionRepository.save(transaction);
-                    System.out.printf("[Transaction] %s - %s: %s%n", date, category.getName(), amount);
+                    System.out.printf("[Transaction] %s - %s: %s (%s)%n",
+                            date, category.getName(), amount, transaction.getType());
                 } catch (Exception e) {
                     System.err.println("[Error] Saving transaction failed: " + e.getMessage());
                     e.printStackTrace();
                 }
 
-                // Cập nhật balance
-                wallet.setBalance(wallet.getBalance().add(isExpense ? amount.negate() : amount));
+                // Update wallet balance
+                wallet.setBalance(wallet.getBalance().add(amount));
             }
 
             walletRepository.save(wallet);
