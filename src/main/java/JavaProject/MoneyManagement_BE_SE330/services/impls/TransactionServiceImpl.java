@@ -3,6 +3,7 @@ package JavaProject.MoneyManagement_BE_SE330.services.impls;
 import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
 import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.*;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.*;
 import JavaProject.MoneyManagement_BE_SE330.repositories.*;
@@ -543,7 +544,33 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    public CashFlowSummaryDTO getCashFlowSummary(LocalDate startDate, LocalDate endDate) {
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
+                .stream()
+                .map(Wallet::getWalletID)
+                .collect(Collectors.toList());
+
+        List<Transaction> transactions = transactionRepository.findByWalletWalletIDInAndTransactionDateBetween(
+                userWalletIds,
+                startDate.atStartOfDay(),
+                endDate.atTime(23, 59, 59)
+        );
+
+        BigDecimal totalIncome = transactions.stream()
+                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = transactions.stream()
+                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new CashFlowSummaryDTO(totalIncome, totalExpenses);
+    }
+
+    @Override
     public DailySummaryDTO getDailySummary(LocalDate date) {
         // 1) resolve user and their wallets
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
@@ -845,5 +872,30 @@ public class TransactionServiceImpl implements TransactionService {
         result.setTotalIncome(totalIncome);
         result.setTotalExpenses(totalExpenses);
         return result;
+    }
+
+    @Override
+    public Object generateReportData(ReportInfoDTO reportInfo) {
+        try {
+            switch (reportInfo.getType().toLowerCase()) {
+                case "category-breakdown":
+                    return getCategoryBreakdown(reportInfo.getStartDate(), reportInfo.getEndDate());
+                case "cash-flow":
+                    return getCashFlowSummary(reportInfo.getStartDate(), reportInfo.getEndDate());
+                case "daily-summary":
+                    return getDailySummary(reportInfo.getStartDate());
+                case "weekly-summary":
+                    return getWeeklySummary(reportInfo.getStartDate());
+                case "monthly-summary":
+                    return getMonthlySummary(YearMonth.from(reportInfo.getStartDate()));
+                case "yearly-summary":
+                    return getYearlySummary(reportInfo.getStartDate().getYear());
+                default:
+                    throw new IllegalArgumentException("Unsupported report type: " + reportInfo.getType());
+            }
+        } catch (Exception e) {
+            log.error("Error generating report data for type: {}", reportInfo.getType(), e);
+            throw new RuntimeException("Failed to generate report data", e);
+        }
     }
 }

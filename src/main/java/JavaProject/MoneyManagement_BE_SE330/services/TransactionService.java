@@ -1,5 +1,6 @@
 package JavaProject.MoneyManagement_BE_SE330.services;
 
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.*;
 
 import java.time.LocalDate;
@@ -21,4 +22,6 @@ public interface TransactionService {
     WeeklySummaryDTO getWeeklySummary(LocalDate weekStartDate);
     MonthlySummaryDTO getMonthlySummary(YearMonth yearMonth);
     YearlySummaryDTO getYearlySummary(int year);
+    CashFlowSummaryDTO getCashFlowSummary(LocalDate startDate, LocalDate endDate);
+    Object generateReportData(ReportInfoDTO reportInfo);
 }
