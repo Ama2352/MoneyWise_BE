@@ -548,10 +548,10 @@ public class TransactionServiceImpl implements TransactionService {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
                 .stream()
-                .map(Wallet::getWalletID)
+                .map(Wallet::getWalletId)
                 .collect(Collectors.toList());
 
-        List<Transaction> transactions = transactionRepository.findByWalletWalletIDInAndTransactionDateBetween(
+        List<Transaction> transactions = transactionRepository.findByWalletWalletIdInAndTransactionDateBetween(
                 userWalletIds,
                 startDate.atStartOfDay(),
                 endDate.atTime(23, 59, 59)

@@ -10,6 +10,7 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
 import JavaProject.MoneyManagement_BE_SE330.services.AuthService;
+import JavaProject.MoneyManagement_BE_SE330.services.JwtService;
 import JavaProject.MoneyManagement_BE_SE330.services.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
