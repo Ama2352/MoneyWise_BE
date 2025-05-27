@@ -2,6 +2,8 @@ package JavaProject.MoneyManagement_BE_SE330.controllers;
 
 import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.LoginDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RefreshTokenRequestDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RefreshTokenResponseDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UpdateProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
@@ -15,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,12 +30,14 @@ import java.util.UUID;
 @Tag(name = "Accounts")
 public class AccountController {
     private final AuthService authService;
-    private final UserService userService;
+//    private final UserService userService;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
     @PostMapping("/SignIn")
     public ResponseEntity<String> login(@RequestBody LoginDTO request) {
-        String token = authService.authenticate(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(token);
+        String accessToken = authService.authenticate(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(accessToken);
     }
 
     @PostMapping("/SignUp")
@@ -41,37 +46,69 @@ public class AccountController {
         return ResponseEntity.ok(success);
     }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @PostMapping(
-            value = "/avatar",
-            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
-            produces = {MediaType.APPLICATION_JSON_VALUE}
-    )
-    public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
-        User currentUser = userService.getCurrentUser();
-        String avatarUrl = userService.updateUserAvatar(currentUser.getId(), file);
-        return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
-    }
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PostMapping(
+//            value = "/avatar",
+//            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE},
+//            produces = {MediaType.APPLICATION_JSON_VALUE}
+//    )
+//    public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) throws Exception {
+//        User currentUser = userService.getCurrentUser();
+//        String avatarUrl = userService.updateUserAvatar(currentUser.getId(), file);
+//        return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
+//    }
+//
+//    @SecurityRequirement(name = "bearerAuth")
+//    @GetMapping("/profile")
+//    public ResponseEntity<UserProfileDTO> getUserProfile() {
+//        User currentUser = userService.getCurrentUser();
+//        UserProfileDTO dto = userService.getUserProfile(currentUser.getId());
+//        return ResponseEntity.ok(dto);
+//    }
+//
+//    @SecurityRequirement(name = "bearerAuth")
+//    @GetMapping("/users/{userId}")
+//    public ResponseEntity<UserProfileDTO> getOtherUserProfile(@PathVariable("userId") UUID userId) {
+//        UserProfileDTO dto = userService.getUserProfile(userId);
+//        return ResponseEntity.ok(dto);
+//    }
+//
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PutMapping("/profile")
+//    public ResponseEntity<UserProfileDTO> updateUserProfile(@RequestBody @Valid UpdateProfileDTO dto) {
+//        UserProfileDTO updatedProfile = userService.updateCurrentUserProfile(dto);
+//        return ResponseEntity.ok(updatedProfile);
+//    }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @GetMapping("/profile")
-    public ResponseEntity<UserProfileDTO> getUserProfile() {
-        User currentUser = userService.getCurrentUser();
-        UserProfileDTO dto = userService.getUserProfile(currentUser.getId());
-        return ResponseEntity.ok(dto);
-    }
+    @PostMapping("/RefreshToken")
+    public ResponseEntity<RefreshTokenResponseDTO> refreshToken(@RequestBody RefreshTokenRequestDTO request) {
+        try {
+            String expiredAccessToken = request.getAccessToken();
+            if (expiredAccessToken == null || expiredAccessToken.isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                        RefreshTokenResponseDTO.error("Access token is required")
+                );
+            }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @GetMapping("/users/{userId}")
-    public ResponseEntity<UserProfileDTO> getOtherUserProfile(@PathVariable("userId") UUID userId ) {
-        UserProfileDTO dto = userService.getUserProfile(userId);
-        return ResponseEntity.ok(dto);
-    }
+            // Validate expired access token
+            String username = jwtService.validateExpiredToken(expiredAccessToken);
+            if (username == null) {
+                return ResponseEntity.badRequest().body(
+                        RefreshTokenResponseDTO.error("Invalid access token")
+                );
+            }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @PutMapping("/profile")
-    public ResponseEntity<UserProfileDTO> updateUserProfile(@RequestBody @Valid UpdateProfileDTO dto) {
-        UserProfileDTO updatedProfile = userService.updateCurrentUserProfile(dto);
-        return ResponseEntity.ok(updatedProfile);
+            // Load user details
+            var userDetails = userDetailsService.loadUserByUsername(username);
+
+            // Generate new access token
+            String newAccessToken = jwtService.generateToken(userDetails);
+
+            return ResponseEntity.ok(RefreshTokenResponseDTO.success(newAccessToken));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                    RefreshTokenResponseDTO.error(e.getMessage())
+            );
+        }
     }
 }
