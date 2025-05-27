@@ -1,28 +1,19 @@
 package JavaProject.MoneyManagement_BE_SE330.controllers;
 
-import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.AuthResponseDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.LoginDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RefreshTokenRequestDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RefreshTokenResponseDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 //import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UpdateProfileDTO;
 //import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
-import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.services.AuthService;
 import JavaProject.MoneyManagement_BE_SE330.services.JwtService;
 //import JavaProject.MoneyManagement_BE_SE330.services.UserService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -35,8 +26,9 @@ public class AccountController {
     private final UserDetailsService userDetailsService;
 
     @PostMapping("/SignIn")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginDTO request) {
-        return ResponseEntity.ok(authService.authenticate(request.getEmail(), request.getPassword()));
+    public ResponseEntity<String> login(@RequestBody LoginDTO request) {
+        String accessToken = authService.authenticate(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(accessToken);
     }
 
     @PostMapping("/SignUp")
@@ -80,12 +72,12 @@ public class AccountController {
 //    }
 
     @PostMapping("/RefreshToken")
-    public ResponseEntity<AuthResponseDTO> refreshToken(@RequestBody RefreshTokenRequestDTO request) {
+    public ResponseEntity<RefreshTokenResponseDTO> refreshToken(@RequestBody RefreshTokenRequestDTO request) {
         try {
             String expiredAccessToken = request.getAccessToken();
             if (expiredAccessToken == null || expiredAccessToken.isEmpty()) {
                 return ResponseEntity.badRequest().body(
-                        new AuthResponseDTO(null, false, new String[]{"Access token is required"})
+                        RefreshTokenResponseDTO.error("Access token is required")
                 );
             }
 
@@ -93,7 +85,7 @@ public class AccountController {
             String username = jwtService.validateExpiredToken(expiredAccessToken);
             if (username == null) {
                 return ResponseEntity.badRequest().body(
-                        new AuthResponseDTO(null, false, new String[]{"Invalid access token"})
+                        RefreshTokenResponseDTO.error("Invalid access token")
                 );
             }
 
@@ -103,14 +95,10 @@ public class AccountController {
             // Generate new access token
             String newAccessToken = jwtService.generateToken(userDetails);
 
-            AuthResponseDTO response = new AuthResponseDTO();
-            response.setAccessToken(newAccessToken);
-            response.setSuccess(true);
-            response.setErrors(new String[0]);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(RefreshTokenResponseDTO.success(newAccessToken));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(
-                    new AuthResponseDTO(null, false, new String[]{e.getMessage()})
+                    RefreshTokenResponseDTO.error(e.getMessage())
             );
         }
     }

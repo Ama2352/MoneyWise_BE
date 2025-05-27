@@ -1,7 +1,6 @@
 package JavaProject.MoneyManagement_BE_SE330.services.impls;
 
 import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.AuthResponseDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.User;
 import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
@@ -29,16 +28,12 @@ public class AuthServiceImpl implements AuthService {
             Pattern.compile("^(?=.*[A-Z])(?=.*[@#$%^&+=!]).{6,}$");
 
     @Override
-    public AuthResponseDTO authenticate(String email, String password) {
+    public String authenticate(String email, String password) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new BadCredentialsException("Invalid email or password");
         }
-        String accessToken = jwtService.generateToken(userDetails);
-
-        AuthResponseDTO response = new AuthResponseDTO();
-        response.setAccessToken(accessToken);
-        return response;
+        return jwtService.generateToken(userDetails);
     }
 
     @Override
