@@ -1,9 +1,9 @@
 package JavaProject.MoneyManagement_BE_SE330.controllers;
 
-import JavaProject.MoneyManagement_BE_SE330.helper.ValidationException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
@@ -12,7 +12,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -23,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/Reports")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Reports")
 public class ReportsController {
 
     @Autowired
@@ -31,9 +31,11 @@ public class ReportsController {
     @PostMapping("/generate")
     public ResponseEntity<ByteArrayResource> generateReport(@Valid @RequestBody ReportInfoDTO reportInfo) {
         try {
-            if(reportInfo.getStartDate().isAfter(reportInfo.getEndDate())) {
+            if (reportInfo.getEndDate() != null &&
+                    reportInfo.getStartDate().isAfter(reportInfo.getEndDate())) {
                 throw new RuntimeException("Start date must not be after end date");
             }
+
             // Create data
             Object reportData = transactionService.generateReportData(reportInfo);
 

@@ -3,13 +3,15 @@ package JavaProject.MoneyManagement_BE_SE330.controllers;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.geminiOCR.OcrTextRequestDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.geminiOCR.TransactionInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.GeminiService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/gemini")
+@RequestMapping("/api/Gemini")
 @RequiredArgsConstructor
+@Tag(name = "Gemini")
 public class GeminiController {
     private final GeminiService geminiService;
 
