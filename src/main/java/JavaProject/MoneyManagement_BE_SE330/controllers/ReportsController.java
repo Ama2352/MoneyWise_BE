@@ -1,7 +1,9 @@
 package JavaProject.MoneyManagement_BE_SE330.controllers;
 
+import JavaProject.MoneyManagement_BE_SE330.helper.ValidationException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
@@ -20,15 +22,18 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/Reports")
+@SecurityRequirement(name = "bearerAuth")
 public class ReportsController {
 
     @Autowired
     private TransactionService transactionService;
 
-    @PreAuthorize("hasRole('USER')")
     @PostMapping("/generate")
     public ResponseEntity<ByteArrayResource> generateReport(@Valid @RequestBody ReportInfoDTO reportInfo) {
         try {
+            if(reportInfo.getStartDate().isAfter(reportInfo.getEndDate())) {
+                throw new RuntimeException("Start date must not be after end date");
+            }
             // Create data
             Object reportData = transactionService.generateReportData(reportInfo);
 

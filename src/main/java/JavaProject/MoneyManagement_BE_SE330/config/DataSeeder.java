@@ -9,6 +9,7 @@ import JavaProject.MoneyManagement_BE_SE330.repositories.TransactionRepository;
 import JavaProject.MoneyManagement_BE_SE330.repositories.UserRepository;
 import JavaProject.MoneyManagement_BE_SE330.repositories.WalletRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ public class DataSeeder {
         System.out.println("[DataSeeder] Starting seed process...");
 
         // Kiểm tra nếu đã có dữ liệu, không tạo lại
-        if (userRepository.count() > 0) {
+        if (userRepository.findByUsername("helloworld@example.com").isPresent()) {
             System.out.println("[DataSeeder] Users already exist. Skipping seeding.");
             return;
         }

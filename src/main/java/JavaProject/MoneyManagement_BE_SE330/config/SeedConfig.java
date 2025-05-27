@@ -21,62 +21,62 @@ import java.util.UUID;
 @Configuration
 public class SeedConfig {
 
-    @Bean
-    public CommandLineRunner initAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        return args -> {
-            if(!userRepository.existsByUsername("admin@example.com")) {
-                User admin = new User();
-                admin.setUsername("admin@example.com");
-                admin.setPassword(passwordEncoder.encode("Admin@123"));
-                admin.setEmail("admin@example.com");
-                admin.setFirstName("admin");
-                admin.setLastName("chan");
-                admin.setRoles(Set.of("ADMIN"));
-                admin.setEnabled(true);
-                userRepository.save(admin);
-                System.out.println("✅ Admin user created.");
-            } else {
-                System.out.println("ℹ️ Admin user already exists.");
-            }
-        };
-    }
-
-    @Bean
-    public CommandLineRunner initUserData(UserRepository userRepository, CategoryRepository categoryRepository, WalletRepository walletRepository) {
-        return args -> {
-            List<User> users = userRepository.findAll();
-
-            for (User user : users) {
-                // Check if user has categories
-                boolean userHasCategories = categoryRepository.existsByUser(user);
-                if (!userHasCategories) {
-                    List<Category> categories = List.of(
-                            new Category("Food", user),
-                            new Category("Transport", user),
-                            new Category("Entertainment", user),
-                            new Category("Bills", user),
-                            new Category("Health", user)
-                    );
-                    categoryRepository.saveAll(categories);
-                    System.out.println("✅ Categories seeded for user " + user.getUsername());
-                }
-
-                // Check if user has wallets
-                boolean userHasWallets = walletRepository.existsByUser(user);
-                if (!userHasWallets) {
-                    List<Wallet> wallets = List.of(
-                            new Wallet("Cash", new BigDecimal("100000"), user),
-                            new Wallet("Bank Account", new BigDecimal("2500000"), user),
-                            new Wallet("Credit Card", new BigDecimal("10000000"), user),
-                            new Wallet("Savings", new BigDecimal("500000"), user),
-                            new Wallet("Investment", new BigDecimal("70000"), user)
-                    );
-                    walletRepository.saveAll(wallets);
-                    System.out.println("✅ Wallets seeded for user " + user.getUsername());
-                }
-            }
-        };
-    }
+//    @Bean
+//    public CommandLineRunner initAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+//        return args -> {
+//            if(!userRepository.existsByUsername("admin@example.com")) {
+//                User admin = new User();
+//                admin.setUsername("admin@example.com");
+//                admin.setPassword(passwordEncoder.encode("Admin@123"));
+//                admin.setEmail("admin@example.com");
+//                admin.setFirstName("admin");
+//                admin.setLastName("chan");
+//                admin.setRoles(Set.of("ADMIN"));
+//                admin.setEnabled(true);
+//                userRepository.save(admin);
+//                System.out.println("✅ Admin user created.");
+//            } else {
+//                System.out.println("ℹ️ Admin user already exists.");
+//            }
+//        };
+//    }
+//
+//    @Bean
+//    public CommandLineRunner initUserData(UserRepository userRepository, CategoryRepository categoryRepository, WalletRepository walletRepository) {
+//        return args -> {
+//            List<User> users = userRepository.findAll();
+//
+//            for (User user : users) {
+//                // Check if user has categories
+//                boolean userHasCategories = categoryRepository.existsByUser(user);
+//                if (!userHasCategories) {
+//                    List<Category> categories = List.of(
+//                            new Category("Food", user),
+//                            new Category("Transport", user),
+//                            new Category("Entertainment", user),
+//                            new Category("Bills", user),
+//                            new Category("Health", user)
+//                    );
+//                    categoryRepository.saveAll(categories);
+//                    System.out.println("✅ Categories seeded for user " + user.getUsername());
+//                }
+//
+//                // Check if user has wallets
+//                boolean userHasWallets = walletRepository.existsByUser(user);
+//                if (!userHasWallets) {
+//                    List<Wallet> wallets = List.of(
+//                            new Wallet("Cash", new BigDecimal("100000"), user),
+//                            new Wallet("Bank Account", new BigDecimal("2500000"), user),
+//                            new Wallet("Credit Card", new BigDecimal("10000000"), user),
+//                            new Wallet("Savings", new BigDecimal("500000"), user),
+//                            new Wallet("Investment", new BigDecimal("70000"), user)
+//                    );
+//                    walletRepository.saveAll(wallets);
+//                    System.out.println("✅ Wallets seeded for user " + user.getUsername());
+//                }
+//            }
+//        };
+//    }
 
 
 
