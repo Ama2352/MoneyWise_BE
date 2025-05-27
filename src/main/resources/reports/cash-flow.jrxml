@@ -24,7 +24,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="26" isBold="true"/>
                 </textElement>
-                <text><![CDATA[CASH FLOW SUMMARY REPORT]]></text>
+                <text><![CDATA[CASH FLOW SUMMARY]]></text>
             </staticText>
             <textField>
                 <reportElement x="0" y="55" width="555" height="30" forecolor="#ECF0F1"/>
@@ -54,14 +54,14 @@
             </rectangle>
             <staticText>
                 <reportElement x="60" y="70" width="180" height="20" forecolor="#27AE60"/>
-                <textElement verticalAlignment="Middle">
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Total Income]]></text>
             </staticText>
             <textField isBlankWhenNull="true">
                 <reportElement x="60" y="95" width="180" height="35" forecolor="#27AE60"/>
-                <textElement verticalAlignment="Middle">
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="18" isBold="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalIncome() != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($P{cashFlowData}.getTotalIncome()) : new java.text.DecimalFormat("#,##0").format($P{cashFlowData}.getTotalIncome())) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
@@ -75,14 +75,14 @@
             </rectangle>
             <staticText>
                 <reportElement x="310" y="70" width="180" height="20" forecolor="#E74C3C"/>
-                <textElement verticalAlignment="Middle">
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
                 <text><![CDATA[Total Expenses]]></text>
             </staticText>
             <textField isBlankWhenNull="true">
                 <reportElement x="310" y="95" width="180" height="35" forecolor="#E74C3C"/>
-                <textElement verticalAlignment="Middle">
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="18" isBold="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalExpenses() != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($P{cashFlowData}.getTotalExpenses()) : new java.text.DecimalFormat("#,##0").format($P{cashFlowData}.getTotalExpenses())) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
