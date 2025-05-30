@@ -36,7 +36,7 @@ public class DataSeeder {
         System.out.println("[DataSeeder] Starting seed process...");
 
         // Kiểm tra nếu đã có dữ liệu, không tạo lại
-        if (userRepository.findByUsername("test@example.com").isPresent()) {
+        if (userRepository.findByUsername("test123@example.com").isPresent()) {
             System.out.println("[DataSeeder] Users already exist. Skipping seeding.");
             return;
         }
@@ -46,8 +46,8 @@ public class DataSeeder {
         User user = new User();
         user.setFirstName("Test");
         user.setLastName("User");
-        user.setEmail("test@example.com");
-        user.setUsername("test@example.com");
+        user.setEmail("test123@example.com");
+        user.setUsername("test123@example.com");
         user.setPassword(passwordEncoder.encode("Test@123"));
         user.setRoles(Set.of("USER"));
         user.setEnabled(true);
@@ -91,10 +91,8 @@ public class DataSeeder {
                 // Randomly decide if this is an expense or income transaction
                 boolean isExpense = random.nextBoolean(); // 50% chance for expense or income
 
-                // Set amount: positive for income, negative for expense
-                BigDecimal amount = isExpense
-                        ? new BigDecimal(random.nextInt(451) + 50) // 50 to 500
-                        : new BigDecimal(random.nextInt(901) + 100); // 100 to 1000
+                // Set amount income and expenses same
+                BigDecimal amount = new BigDecimal(random.nextInt(900_001) + 100_000); // 100,000 to 1,000,000
 
                 // Random date from 01/01/2024 to current time
                 LocalDateTime startDate = LocalDateTime.of(2024, 1, 1, 0, 0);

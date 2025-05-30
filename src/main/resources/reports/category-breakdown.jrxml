@@ -26,7 +26,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="26" isBold="true"/>
                 </textElement>
-                <text><![CDATA[CATEGORY BREAKDOWN REPORT]]></text>
+                <text><![CDATA[CATEGORY BREAKDOWN]]></text>
             </staticText>
             <textField>
                 <reportElement x="0" y="55" width="555" height="30" forecolor="#ECF0F1"/>

@@ -37,46 +37,63 @@
                 </textElement>
                 <text><![CDATA[Financial Overview]]></text>
             </staticText>
+
             <rectangle>
                 <reportElement x="40" y="55" width="230" height="80" backcolor="#E8F5E8"/>
                 <graphicElement>
                     <pen lineWidth="1" lineColor="#27AE60"/>
                 </graphicElement>
             </rectangle>
-            <staticText>
-                <reportElement x="50" y="65" width="210" height="20" forecolor="#27AE60"/>
-                <textElement verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="11" isBold="true"/>
+            <textField>
+                <reportElement x="55" y="70" width="200" height="20" forecolor="#27AE60"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
-                <text><![CDATA[Total Income]]></text>
-            </staticText>
+                <textFieldExpression><![CDATA["Total Income of " + $P{startDate}.format(java.time.format.DateTimeFormatter.ofPattern("yyyy"))]]></textFieldExpression>
+            </textField>
             <textField isBlankWhenNull="true">
-                <reportElement x="50" y="90" width="210" height="30" forecolor="#27AE60"/>
-                <textElement verticalAlignment="Middle">
+                <reportElement x="55" y="90" width="200" height="30" forecolor="#27AE60"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="16" isBold="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{totalIncome} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{totalIncome}) : new java.text.DecimalFormat("#,##0").format($F{totalIncome})) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[
+                $F{totalIncome} != null ?
+                ($P{currencySymbol}.equals("USD")
+                    ? new java.text.DecimalFormat("#,##0.00").format($F{totalIncome})
+                    : new java.text.DecimalFormat("#,##0").format($F{totalIncome}))
+                    + " " + $P{currencySymbol}
+                : "0 " + $P{currencySymbol}
+            ]]></textFieldExpression>
             </textField>
+
             <rectangle>
                 <reportElement x="285" y="55" width="230" height="80" backcolor="#FDF2F2"/>
                 <graphicElement>
                     <pen lineWidth="1" lineColor="#E74C3C"/>
                 </graphicElement>
             </rectangle>
-            <staticText>
-                <reportElement x="295" y="65" width="210" height="20" forecolor="#E74C3C"/>
-                <textElement verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="11" isBold="true"/>
+            <textField>
+                <reportElement x="300" y="70" width="200" height="20" forecolor="#E74C3C"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font fontName="Times New Roman" size="12" isBold="true"/>
                 </textElement>
-                <text><![CDATA[Total Expenses]]></text>
-            </staticText>
+                <textFieldExpression><![CDATA["Total Expenses of " + $P{startDate}.format(java.time.format.DateTimeFormatter.ofPattern("yyyy"))]]></textFieldExpression>
+            </textField>
             <textField isBlankWhenNull="true">
-                <reportElement x="295" y="90" width="210" height="30" forecolor="#E74C3C"/>
-                <textElement verticalAlignment="Middle">
+                <reportElement x="300" y="90" width="200" height="30" forecolor="#E74C3C"/>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="Times New Roman" size="16" isBold="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{totalExpenses} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{totalExpenses}) : new java.text.DecimalFormat("#,##0").format($F{totalExpenses})) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[
+                $F{totalExpenses} != null ?
+                ($P{currencySymbol}.equals("USD")
+                    ? new java.text.DecimalFormat("#,##0.00").format($F{totalExpenses})
+                    : new java.text.DecimalFormat("#,##0").format($F{totalExpenses}))
+                    + " " + $P{currencySymbol}
+                : "0 " + $P{currencySymbol}
+            ]]></textFieldExpression>
             </textField>
+
             <staticText>
                 <reportElement x="20" y="150" width="510" height="25" forecolor="#2C3E50"/>
                 <textElement verticalAlignment="Middle">
@@ -84,13 +101,18 @@
                 </textElement>
                 <text><![CDATA[Yearly Breakdown]]></text>
             </staticText>
+
             <subreport>
                 <reportElement x="20" y="180" width="510" height="120"/>
+                <subreportParameter name="currencySymbol">
+                    <subreportParameterExpression><![CDATA[$P{currencySymbol}]]></subreportParameterExpression>
+                </subreportParameter>
                 <dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($F{yearlyDetails})]]></dataSourceExpression>
-                <subreportExpression><![CDATA["yearly-detail-subreport.jasper"]]></subreportExpression>
+                <subreportExpression><![CDATA["reports/yearly-detail-subreport.jasper"]]></subreportExpression>
             </subreport>
         </band>
     </detail>
+
     <summary>
         <band height="80">
             <rectangle>
