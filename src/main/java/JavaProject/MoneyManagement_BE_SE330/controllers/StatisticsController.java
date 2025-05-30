@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/Categories")
+@RequestMapping("/api/Statistics")
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Statistics")
 public class StatisticsController {
