@@ -40,7 +40,7 @@ public class AuthServiceImpl implements AuthService {
     public boolean register(RegisterDTO dto) {
         String email = dto.getEmail();
         String password = dto.getPassword();
-        String confirmedPassword = dto.getConfirmedPassword();
+        String confirmPassword = dto.getConfirmPassword();
 
         if (userRepository.existsByEmail(email)) {
             return false;
@@ -50,13 +50,17 @@ public class AuthServiceImpl implements AuthService {
             return false;
         }
 
-        if (!password.equals(confirmedPassword)) {
+        if (!password.equals(confirmPassword)) {
             return false;
         }
 
         User newUser = applicationMapper.toUserEntity(dto);
-        userRepository.save(newUser);
 
-        return true;
+        try {
+            userRepository.save(newUser);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

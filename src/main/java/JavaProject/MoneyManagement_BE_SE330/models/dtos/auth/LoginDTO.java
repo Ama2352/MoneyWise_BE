@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class LoginDTO {
 
-    @Schema(example = "helloworld@example.com")
+    @Schema(example = "test123@example.com")
     private String email;
 
     @Schema(example = "Test@123")
