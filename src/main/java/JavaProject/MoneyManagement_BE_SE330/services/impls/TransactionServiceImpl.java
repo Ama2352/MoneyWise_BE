@@ -7,6 +7,7 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.*;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.*;
 import JavaProject.MoneyManagement_BE_SE330.repositories.*;
+import JavaProject.MoneyManagement_BE_SE330.services.SavingGoalService;
 import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,12 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserRepository userRepository;
     private final BudgetRepository budgetRepository;
     private final SavingGoalRepository savingGoalRepository;
+    private final SavingGoalService savingGoalService;
+
+    // --- Khai báo hằng số để tránh hardcode chuỗi và dễ bảo trì ---
+    private static final String TRANSACTION_TYPE_INCOME = "income";
+    private static final String TRANSACTION_TYPE_EXPENSE = "expense";
+
 
     @Override
     @Transactional(readOnly = true)
@@ -101,7 +108,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.save(transaction);
 
         // Update UserBudget for Expense transactions
-        if (Objects.equals(transaction.getType(), "expense")) {
+        if (TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(transaction.getType())) {
             List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                     transaction.getCategory(),
                     transaction.getWallet(),
@@ -119,7 +126,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Update UserSavingGoal for Income transactions
-        if (Objects.equals(transaction.getType(), "income")) {
+        if (TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())) {
             List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                     transaction.getCategory(),
                     transaction.getWallet(),
@@ -133,11 +140,13 @@ public class TransactionServiceImpl implements TransactionService {
                         transaction.getAmount(),
                         transaction.getTransactionDate()
                 );
+                // Refresh saving goals to update savedPercentage
+                savingGoalService.getSavingGoalProgressAndAlerts();
             }
         }
 
         // Update Wallet Balance
-        BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
+        BigDecimal balanceChange = TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())
                 ? transaction.getAmount()
                 : transaction.getAmount().negate();
         walletRepository.updateBalance(transaction.getWallet().getWalletId(), balanceChange);
@@ -178,7 +187,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Step 1: Reverse original effects if relevant fields changed
         if (hasChanges) {
-            if (Objects.equals(transaction.getType(), "expense")) {
+            if (TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(transaction.getType())) {
                 List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         transaction.getCategory(),
                         transaction.getWallet(),
@@ -193,7 +202,7 @@ public class TransactionServiceImpl implements TransactionService {
                             transaction.getTransactionDate()
                     );
                 }
-            } else if (Objects.equals(transaction.getType(), "income")) {
+            } else if (TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())) {
                 List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         transaction.getCategory(),
                         transaction.getWallet(),
@@ -207,11 +216,13 @@ public class TransactionServiceImpl implements TransactionService {
                             transaction.getAmount().negate(), // Reverse the amount
                             transaction.getTransactionDate()
                     );
+                    // Refresh saving goals to update savedPercentage
+                    savingGoalService.getSavingGoalProgressAndAlerts();
                 }
             }
 
             // Reverse Wallet Balance
-            BigDecimal originalBalanceChange = Objects.equals(transaction.getType(), "income")
+            BigDecimal originalBalanceChange = TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())
                     ? transaction.getAmount().negate() // Undo income
                     : transaction.getAmount(); // Undo expense
             walletRepository.updateBalance(transaction.getWallet().getWalletId(), originalBalanceChange);
@@ -230,7 +241,7 @@ public class TransactionServiceImpl implements TransactionService {
         // Step 3: Apply new effects if relevant fields changed
         if (hasChanges) {
             BigDecimal newBalanceChange;
-            if (Objects.equals(transaction.getType(), "expense")) {
+            if (TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(transaction.getType())) {
                 List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         transaction.getCategory(),
                         transaction.getWallet(),
@@ -246,7 +257,7 @@ public class TransactionServiceImpl implements TransactionService {
                     );
                 }
                 newBalanceChange = transaction.getAmount().negate(); // Decrease balance
-            } else {
+            } else { // Assuming if not expense, it's income
                 List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         transaction.getCategory(),
                         transaction.getWallet(),
@@ -283,7 +294,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Reverse effects on Budget or SavingGoal
-        if (Objects.equals(transaction.getType(), "expense")) {
+        if (TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(transaction.getType())) {
             List<Budget> budgets = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                     transaction.getCategory(),
                     transaction.getWallet(),
@@ -298,7 +309,7 @@ public class TransactionServiceImpl implements TransactionService {
                         transaction.getTransactionDate()
                 );
             }
-        } else if (Objects.equals(transaction.getType(), "income")) {
+        } else if (TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())) {
             List<SavingGoal> goals = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                     transaction.getCategory(),
                     transaction.getWallet(),
@@ -312,11 +323,13 @@ public class TransactionServiceImpl implements TransactionService {
                         transaction.getAmount().negate(),
                         transaction.getTransactionDate()
                 );
+                // Refresh saving goals to update savedPercentage
+                savingGoalService.getSavingGoalProgressAndAlerts();
             }
         }
 
         // Reverse Wallet Balance
-        BigDecimal balanceChange = Objects.equals(transaction.getType(), "income")
+        BigDecimal balanceChange = TRANSACTION_TYPE_INCOME.equalsIgnoreCase(transaction.getType())
                 ? transaction.getAmount().negate() // Undo income
                 : transaction.getAmount(); // Undo expense
         walletRepository.updateBalance(transaction.getWallet().getWalletId(), balanceChange);
@@ -462,11 +475,11 @@ public class TransactionServiceImpl implements TransactionService {
 
             // Separate income and expenses
             List<Transaction> incomeTransactions = transactions.stream()
-                    .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                    .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                     .toList();
 
             List<Transaction> expenseTransactions = transactions.stream()
-                    .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                    .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                     .toList();
 
 
@@ -489,12 +502,12 @@ public class TransactionServiceImpl implements TransactionService {
                         Category category = categoryTransactions.getFirst().getCategory();
 
                         BigDecimal categoryIncome = categoryTransactions.stream()
-                                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                                .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                                 .map(Transaction::getAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         BigDecimal categoryExpense = categoryTransactions.stream()
-                                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                                .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                                 .map(Transaction::getAmount)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                                 .abs();
@@ -558,12 +571,12 @@ public class TransactionServiceImpl implements TransactionService {
         );
 
         BigDecimal totalIncome = transactions.stream()
-                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalExpenses = transactions.stream()
-                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -591,12 +604,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 4) compute totalIncome & totalExpenses by type
         BigDecimal totalIncome = dailyTxs.stream()
-                .filter(tx -> "income".equalsIgnoreCase(tx.getType()))
+                .filter(tx -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(tx.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalExpenses = dailyTxs.stream()
-                .filter(tx -> "expense".equalsIgnoreCase(tx.getType()))
+                .filter(tx -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(tx.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -621,12 +634,12 @@ public class TransactionServiceImpl implements TransactionService {
                     List<Transaction> txs = txsByDow.getOrDefault(dow, List.of());
 
                     BigDecimal income = txs.stream()
-                            .filter(tx -> "income".equalsIgnoreCase(tx.getType()))
+                            .filter(tx -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(tx.getType()))
                             .map(Transaction::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                     BigDecimal expense = txs.stream()
-                            .filter(tx -> "expense".equalsIgnoreCase(tx.getType()))
+                            .filter(tx -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(tx.getType()))
                             .map(Transaction::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -696,13 +709,15 @@ public class TransactionServiceImpl implements TransactionService {
                     })
                     .toList();
 
+            // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
             BigDecimal income = weekTxs.stream()
-                    .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                    .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                     .map(Transaction::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+            // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
             BigDecimal expense = weekTxs.stream()
-                    .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                    .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                     .map(t -> t.getAmount().abs())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -740,7 +755,9 @@ public class TransactionServiceImpl implements TransactionService {
             return empty;
         }
 
-        // 2. Define year range
+        // 2. Define year range (This seems to be for the *entire* year, not just the month)
+        // If you only want the specific month, you can adjust the fetch range.
+        // For current logic that fetches whole year then filters by month:
         LocalDate startOfYear = yearMonth.atDay(1).withDayOfYear(1);
         LocalDate endOfYear = startOfYear.plusYears(1).minusDays(1);
 
@@ -759,13 +776,15 @@ public class TransactionServiceImpl implements TransactionService {
                             .filter(t -> t.getTransactionDate().getMonthValue() == month)
                             .toList();
 
+                    // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
                     BigDecimal income = monthlyTxs.stream()
-                            .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                            .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                             .map(Transaction::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                    // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
                     BigDecimal expense = monthlyTxs.stream()
-                            .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                            .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                             .map(t -> t.getAmount().abs())
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -786,7 +805,8 @@ public class TransactionServiceImpl implements TransactionService {
                     LocalDate d = t.getTransactionDate().toLocalDate();
                     return !d.isBefore(startOfMonth) && !d.isAfter(endOfMonth);
                 })
-                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
+                .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -795,7 +815,8 @@ public class TransactionServiceImpl implements TransactionService {
                     LocalDate d = t.getTransactionDate().toLocalDate();
                     return !d.isBefore(startOfMonth) && !d.isAfter(endOfMonth);
                 })
-                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
+                .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                 .map(t -> t.getAmount().abs())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -816,6 +837,15 @@ public class TransactionServiceImpl implements TransactionService {
                 .stream().map(Wallet::getWalletId).collect(Collectors.toList());
 
         // 2. Define the year range (last 5 years up to the specified year)
+        // Ensure to handle cases where userWalletIds is empty
+        if (userWalletIds.isEmpty()) {
+            YearlySummaryDTO empty = new YearlySummaryDTO();
+            empty.setYearlyDetails(new ArrayList<>());
+            empty.setTotalIncome(BigDecimal.ZERO);
+            empty.setTotalExpenses(BigDecimal.ZERO);
+            return empty;
+        }
+
         int yearsToShow = 5;
         int startYear = year - yearsToShow + 1;
 
@@ -833,13 +863,15 @@ public class TransactionServiceImpl implements TransactionService {
                             .filter(t -> t.getTransactionDate().getYear() == yr)
                             .toList();
 
+                    // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
                     BigDecimal income = yearTxs.stream()
-                            .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                            .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                             .map(Transaction::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                    // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
                     BigDecimal expense = yearTxs.stream()
-                            .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                            .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                             .map(Transaction::getAmount)
                             .reduce(BigDecimal.ZERO, BigDecimal::add).abs();
 
@@ -856,13 +888,15 @@ public class TransactionServiceImpl implements TransactionService {
                 .filter(t -> t.getTransactionDate().getYear() == year)
                 .toList();
 
+        // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
         BigDecimal totalIncome = currentYearTxs.stream()
-                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // SỬA ĐỔI TẠI ĐÂY: Sử dụng equalsIgnoreCase
         BigDecimal totalExpenses = currentYearTxs.stream()
-                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add).abs();
 
