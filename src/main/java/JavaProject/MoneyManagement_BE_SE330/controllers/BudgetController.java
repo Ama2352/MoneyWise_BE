@@ -1,6 +1,7 @@
 package JavaProject.MoneyManagement_BE_SE330.controllers;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.CreateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.UpdateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.BudgetService;
@@ -67,8 +68,8 @@ public class BudgetController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Retrieve progress and alerts for active budgets")
     @GetMapping("/progress")
-    public ResponseEntity<List<BudgetDTO>> getBudgetProgressAndAlerts() {
-        List<BudgetDTO> progress = budgetService.getBudgetProgressAndAlerts();
+    public ResponseEntity<List<BudgetProgressDTO>> getBudgetProgressAndAlerts() {
+        List<BudgetProgressDTO> progress = budgetService.getBudgetProgressAndAlerts();
         return ResponseEntity.ok(progress);
     }
 }

@@ -4,6 +4,7 @@ import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
 import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.CreateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.UpdateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Budget;
@@ -151,13 +152,13 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<BudgetDTO> getBudgetProgressAndAlerts() {
+    public List<BudgetProgressDTO> getBudgetProgressAndAlerts() {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime currentDate = LocalDateTime.now(); // May 26, 2025, 8:31 PM +07
 
         return budgetRepository.findByWalletUser(currentUser).stream()
                 .map(budget -> {
-                    BudgetDTO dto = applicationMapper.toBudgetDTO(budget);
+                    BudgetProgressDTO dto = applicationMapper.toBudgetProgressDTO(budget);
 
                     // Calculate usage percentage
                     BigDecimal usagePercentage = BigDecimal.ZERO;

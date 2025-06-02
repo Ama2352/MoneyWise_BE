@@ -5,6 +5,7 @@ import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.UpdateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Category;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.SavingGoal;
@@ -154,13 +155,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     }
 
     @Transactional(readOnly = true)
-    public List<SavingGoalDTO> getSavingGoalProgressAndAlerts() {
+    public List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts() {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime currentDateTime = LocalDateTime.now(); // May 26, 2025, 8:38 PM +07
 
         return savingGoalRepository.findByWalletUser(currentUser).stream()
                 .map(savingGoal -> {
-                    SavingGoalDTO dto = applicationMapper.toSavingGoalDTO(savingGoal);
+                    SavingGoalProgressDTO dto = applicationMapper.toSavingGoalProgressDTO(savingGoal);
 
                     // Calculate saved percentage
                     BigDecimal savedPercentage = BigDecimal.ZERO;

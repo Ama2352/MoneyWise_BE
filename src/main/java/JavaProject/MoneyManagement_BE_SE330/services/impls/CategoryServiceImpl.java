@@ -2,6 +2,7 @@ package JavaProject.MoneyManagement_BE_SE330.services.impls;
 
 import JavaProject.MoneyManagement_BE_SE330.helper.ApplicationMapper;
 import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
+import JavaProject.MoneyManagement_BE_SE330.helper.LocalizationUtils;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Category;
@@ -27,6 +28,37 @@ public class CategoryServiceImpl implements CategoryService {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         return categoryRepository.findAllByUser(currentUser)
                 .stream()
+                .map(applicationMapper::toCategoryDTO)
+                .toList();
+    }
+
+    @Override
+    public List<CategoryDTO> getAllCategories(String acceptLanguage) {
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        List<Category> userCategories = categoryRepository.findAllByUser(currentUser);
+        
+        // If user has no categories yet, create localized seed categories
+        if (userCategories.isEmpty()) {
+            return createLocalizedSeedCategories(currentUser, acceptLanguage);
+        }
+        
+        // Return existing categories (they were created with localized names)
+        return userCategories.stream()
+                .map(applicationMapper::toCategoryDTO)
+                .toList();
+    }
+    
+    private List<CategoryDTO> createLocalizedSeedCategories(User user, String acceptLanguage) {
+        boolean isVietnamese = LocalizationUtils.isVietnamese(acceptLanguage);
+        List<String> localizedNames = LocalizationUtils.getLocalizedCategories(isVietnamese);
+        
+        List<Category> categories = localizedNames.stream()
+                .map(name -> new Category(name, user))
+                .toList();
+        
+        categoryRepository.saveAll(categories);
+        
+        return categories.stream()
                 .map(applicationMapper::toCategoryDTO)
                 .toList();
     }

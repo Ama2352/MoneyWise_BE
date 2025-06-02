@@ -2,6 +2,7 @@ package JavaProject.MoneyManagement_BE_SE330.controllers;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.UpdateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.services.SavingGoalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,8 +66,8 @@ public class SavingGoalController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Retrieve progress and alerts for active saving goals")
     @GetMapping("/progress")
-    public ResponseEntity<List<SavingGoalDTO>> getSavingGoalProgressAndAlerts() {
-        List<SavingGoalDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts();
+    public ResponseEntity<List<SavingGoalProgressDTO>> getSavingGoalProgressAndAlerts() {
+        List<SavingGoalProgressDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts();
         return ResponseEntity.ok(progress);
     }
 }

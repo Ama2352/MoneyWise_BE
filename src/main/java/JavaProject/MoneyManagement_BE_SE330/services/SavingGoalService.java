@@ -2,6 +2,7 @@ package JavaProject.MoneyManagement_BE_SE330.services;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.UpdateSavingGoalDTO;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,5 +26,5 @@ public interface SavingGoalService {
     UUID deleteSavingGoal(UUID id);
 
     @Transactional(readOnly = true)
-    List<SavingGoalDTO> getSavingGoalProgressAndAlerts();
+    List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts();
 }

@@ -20,10 +20,10 @@ import java.util.UUID;
 @Tag(name = "Category")
 public class CategoryController {
     private final CategoryService categoryService;
-
     @GetMapping
-    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
-        List<CategoryDTO> categories = categoryService.getAllCategories();
+    public ResponseEntity<List<CategoryDTO>> getAllCategories(
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<CategoryDTO> categories = categoryService.getAllCategories(acceptLanguage);
         return ResponseEntity.ok(categories);
     }
 

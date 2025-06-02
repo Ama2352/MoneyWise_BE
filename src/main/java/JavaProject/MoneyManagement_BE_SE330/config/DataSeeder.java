@@ -52,6 +52,7 @@ public class DataSeeder {
         user.setRoles(Set.of("USER"));
         user.setEnabled(true);
         userRepository.save(user);
+
         System.out.println("[DataSeeder] Test user saved.");
 
         // Tạo Categories (single list, no separation of expense/income)
@@ -127,7 +128,5 @@ public class DataSeeder {
             walletRepository.save(wallet);
             System.out.println("[DataSeeder] Wallet saved with final balance: " + wallet.getBalance());
         }
-
-        System.out.println("[DataSeeder] Seeding process completed.");
     }
 }
