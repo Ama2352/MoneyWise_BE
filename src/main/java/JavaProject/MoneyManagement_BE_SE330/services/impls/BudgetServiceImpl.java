@@ -42,13 +42,13 @@ public class BudgetServiceImpl implements BudgetService {
     public BudgetDTO createBudget(CreateBudgetDTO model) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
 
-        Wallet wallet = walletRepository.findById(model.getWalletID())
+        Wallet wallet = walletRepository.findById(model.getWalletId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this wallet");
         }
 
-        Category category = categoryRepository.findById(model.getCategoryID())
+        Category category = categoryRepository.findById(model.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if (!category.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this category");
@@ -101,13 +101,13 @@ public class BudgetServiceImpl implements BudgetService {
             throw new AccessDeniedException("You do not have access to this budget");
         }
 
-        Wallet wallet = walletRepository.findById(model.getWalletID())
+        Wallet wallet = walletRepository.findById(model.getWalletId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this wallet");
         }
 
-        Category category = categoryRepository.findById(model.getCategoryID())
+        Category category = categoryRepository.findById(model.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if (!category.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this category");

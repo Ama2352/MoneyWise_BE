@@ -26,11 +26,11 @@ public class UpdateBudgetDTO {
     @NotNull(message = "Description must not be null")
     private String description;
 
-    @NotNull(message = "CategoryID must not be null")
-    private UUID categoryID;
+    @NotNull(message = "CategoryId must not be null")
+    private UUID categoryId;
 
-    @NotNull(message = "WalletID must not be null")
-    private UUID walletID;
+    @NotNull(message = "WalletId must not be null")
+    private UUID walletId;
 
     @NotNull(message = "BudgetId must not be null")
     private UUID budgetId;

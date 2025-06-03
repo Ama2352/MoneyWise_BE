@@ -176,8 +176,8 @@ public interface ApplicationMapper {
     BudgetProgressDTO toBudgetProgressDTO(Budget budget);
 
     @Mapping(target = "budgetId", ignore = true)
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
     @Mapping(target = "createdAt", ignore = true)
     Budget toBudgetEntity(CreateBudgetDTO dto);
 
@@ -194,8 +194,8 @@ public interface ApplicationMapper {
     SavingGoalProgressDTO toSavingGoalProgressDTO(SavingGoal model);
 
     @Mapping(target = "savingGoalId", ignore = true)
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
     @Mapping(target = "createdAt", ignore = true)
     SavingGoal toSavingGoalEntity(CreateSavingGoalDTO dto);
 }
