@@ -119,6 +119,7 @@ public interface ApplicationMapper {
     }
 
     // ----------- Transaction → TransactionDetailDTO Mapping -----------
+    @Mapping(target = "transactionID", source = "transactionId")
     @Mapping(target = "date", expression = "java(transaction.getTransactionDate())")
     @Mapping(target = "time", expression = "java(transaction.getTransactionDate().toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern(\"HH:mm:ss\")))")
     @Mapping(target = "dayOfWeek", expression = "java(capitalizeDayOfWeek(transaction.getTransactionDate().getDayOfWeek()))")
