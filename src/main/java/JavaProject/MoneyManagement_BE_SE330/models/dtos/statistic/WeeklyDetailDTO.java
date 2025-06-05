@@ -1,4 +1,4 @@
-package JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction;
+package JavaProject.MoneyManagement_BE_SE330.models.dtos.statistic;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,12 +9,13 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MonthlyDetailDTO {
+public class WeeklyDetailDTO {
 
-    private String monthName;
+    private String weekNumber;
 
     private BigDecimal income;
 
     private BigDecimal expense;
 
 }
+

@@ -12,10 +12,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchTransactionsDTO {
-    @NotNull(message = "StartDate must not be null")
-    private LocalDate startDate;
 
-    @NotNull(message = "EndDate must not be null")
+    private LocalDate startDate;
     private LocalDate endDate;
 
     @Pattern(regexp = "Income|Expense", flags = Pattern.Flag.CASE_INSENSITIVE)

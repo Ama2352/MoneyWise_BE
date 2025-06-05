@@ -1,4 +1,4 @@
-package JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction;
+package JavaProject.MoneyManagement_BE_SE330.models.dtos.statistic;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
