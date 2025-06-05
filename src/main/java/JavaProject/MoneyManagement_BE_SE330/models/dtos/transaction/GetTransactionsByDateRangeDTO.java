@@ -13,10 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class GetTransactionsByDateRangeDTO {
 
-    @NotNull(message = "StartDate must not be null")
     private LocalDate startDate;
-
-    @NotNull(message = "EndDate must not be null")
     private LocalDate endDate;
 
     @Pattern(regexp = "Income|Expense", flags = Pattern.Flag.CASE_INSENSITIVE)

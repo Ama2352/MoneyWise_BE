@@ -2,8 +2,8 @@ package JavaProject.MoneyManagement_BE_SE330.controllers;
 
 import JavaProject.MoneyManagement_BE_SE330.helper.CurrencyConverter;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.report.ReportInfoDTO;
-import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.*;
-import JavaProject.MoneyManagement_BE_SE330.services.TransactionService;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.statistic.CashFlowSummaryDTO;
+import JavaProject.MoneyManagement_BE_SE330.services.StatisticService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,7 +30,7 @@ import java.util.*;
 public class ReportsController {
 
     @Autowired
-    private TransactionService transactionService;
+    private StatisticService statisticService;
 
     @Autowired
     private CurrencyConverter currencyConverter;
@@ -46,7 +46,7 @@ public class ReportsController {
                     throw new IllegalArgumentException("Start date must not be after end date");
             }
 
-            Object reportData = transactionService.generateReportData(reportInfo);
+            Object reportData = statisticService.generateReportData(reportInfo);
 
             // Determine currency and symbol
             String currency = reportInfo.getCurrency() != null ? reportInfo.getCurrency().toUpperCase() : "VND";
