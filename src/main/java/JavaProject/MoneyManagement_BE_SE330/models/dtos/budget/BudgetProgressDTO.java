@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BudgetDTO {
+public class BudgetProgressDTO {
     private UUID budgetId;
     private UUID categoryId;
     private UUID walletId;
@@ -21,4 +21,7 @@ public class BudgetDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
+    private BigDecimal usagePercentage = BigDecimal.ZERO;
+    private String progressStatus = "Safe";
+    private String notification;
 }

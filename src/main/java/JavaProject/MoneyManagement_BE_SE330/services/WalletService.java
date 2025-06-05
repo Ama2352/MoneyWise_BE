@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface WalletService {
     List<WalletDTO> getAllWallets();
+    List<WalletDTO> getAllWallets(String acceptLanguage);
     WalletDTO getWalletById(UUID walletId);
     WalletDTO createWallet(CreateWalletDTO model);
     WalletDTO updateWallet(UpdateWalletDTO model);

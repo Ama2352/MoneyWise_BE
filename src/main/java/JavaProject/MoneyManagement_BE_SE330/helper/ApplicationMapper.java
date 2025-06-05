@@ -2,6 +2,7 @@ package JavaProject.MoneyManagement_BE_SE330.helper;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.auth.RegisterDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.CreateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.UpdateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.category.*;
@@ -11,6 +12,7 @@ import JavaProject.MoneyManagement_BE_SE330.models.dtos.group.GroupMemberDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.profile.UserProfileDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.CreateTransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.transaction.TransactionDetailDTO;
@@ -117,6 +119,7 @@ public interface ApplicationMapper {
     }
 
     // ----------- Transaction → TransactionDetailDTO Mapping -----------
+    @Mapping(target = "transactionID", source = "transactionId")
     @Mapping(target = "date", expression = "java(transaction.getTransactionDate())")
     @Mapping(target = "time", expression = "java(transaction.getTransactionDate().toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern(\"HH:mm:ss\")))")
     @Mapping(target = "dayOfWeek", expression = "java(capitalizeDayOfWeek(transaction.getTransactionDate().getDayOfWeek()))")
@@ -164,28 +167,36 @@ public interface ApplicationMapper {
     // Mapping for budget
     @Mapping(target = "categoryId", expression = "java(budget.getCategory().getCategoryId())")
     @Mapping(target = "walletId", expression = "java(budget.getWallet().getWalletId())")
+    BudgetDTO toBudgetDTO(Budget budget);
+
+    @Mapping(target = "categoryId", expression = "java(budget.getCategory().getCategoryId())")
+    @Mapping(target = "walletId", expression = "java(budget.getWallet().getWalletId())")
     @Mapping(target = "usagePercentage", ignore = true)
     @Mapping(target = "progressStatus", ignore = true)
     @Mapping(target = "notification", ignore = true)
-    BudgetDTO toBudgetDTO(Budget budget);
+    BudgetProgressDTO toBudgetProgressDTO(Budget budget);
 
     @Mapping(target = "budgetId", ignore = true)
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
     @Mapping(target = "createdAt", ignore = true)
     Budget toBudgetEntity(CreateBudgetDTO dto);
 
     // Mapping for saving goal
     @Mapping(target = "categoryId", expression = "java(model.getCategory().getCategoryId())")
     @Mapping(target = "walletId", expression = "java(model.getWallet().getWalletId())")
+    SavingGoalDTO toSavingGoalDTO(SavingGoal model);
+
+    @Mapping(target = "categoryId", expression = "java(model.getCategory().getCategoryId())")
+    @Mapping(target = "walletId", expression = "java(model.getWallet().getWalletId())")
     @Mapping(target = "savedPercentage", ignore = true)
     @Mapping(target = "progressStatus", ignore = true)
     @Mapping(target = "notification", ignore = true)
-    SavingGoalDTO toSavingGoalDTO(SavingGoal model);
+    SavingGoalProgressDTO toSavingGoalProgressDTO(SavingGoal model);
 
     @Mapping(target = "savingGoalId", ignore = true)
-    @Mapping(target = "wallet", source = "walletID", qualifiedByName = "mapWalletFromId")
-    @Mapping(target = "category", source = "categoryID", qualifiedByName = "mapCategoryFromId")
+    @Mapping(target = "wallet", source = "walletId", qualifiedByName = "mapWalletFromId")
+    @Mapping(target = "category", source = "categoryId", qualifiedByName = "mapCategoryFromId")
     @Mapping(target = "createdAt", ignore = true)
     SavingGoal toSavingGoalEntity(CreateSavingGoalDTO dto);
 }

@@ -21,7 +21,4 @@ public class SavingGoalDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
-    private BigDecimal savedPercentage = BigDecimal.ZERO;
-    private String progressStatus = "Safe";
-    private String notification;
 }

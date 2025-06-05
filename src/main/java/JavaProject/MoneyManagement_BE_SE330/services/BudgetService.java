@@ -1,6 +1,7 @@
 package JavaProject.MoneyManagement_BE_SE330.services;
 
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.BudgetProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.CreateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.budget.UpdateBudgetDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Budget;
@@ -25,5 +26,5 @@ public interface BudgetService {
     UUID deleteBudget(UUID id);
 
     @Transactional(readOnly = true)
-    List<BudgetDTO> getBudgetProgressAndAlerts();
+    List<BudgetProgressDTO> getBudgetProgressAndAlerts();
 }

@@ -22,10 +22,10 @@ import java.util.UUID;
 @Tag(name = "Wallet")
 public class WalletController {
     private final WalletService walletService;
-
     @GetMapping
-    public ResponseEntity<List<WalletDTO>> getAllWallets() {
-        List<WalletDTO> wallets = walletService.getAllWallets();
+    public ResponseEntity<List<WalletDTO>> getAllWallets(
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<WalletDTO> wallets = walletService.getAllWallets(acceptLanguage);
         return ResponseEntity.ok(wallets);
     }
 

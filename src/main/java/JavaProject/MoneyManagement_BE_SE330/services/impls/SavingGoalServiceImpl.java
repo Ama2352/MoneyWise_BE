@@ -5,6 +5,7 @@ import JavaProject.MoneyManagement_BE_SE330.helper.HelperFunctions;
 import JavaProject.MoneyManagement_BE_SE330.helper.ResourceNotFoundException;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.CreateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalDTO;
+import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.SavingGoalProgressDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.dtos.savingGoal.UpdateSavingGoalDTO;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.Category;
 import JavaProject.MoneyManagement_BE_SE330.models.entities.SavingGoal;
@@ -42,13 +43,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     public SavingGoalDTO createSavingGoal(CreateSavingGoalDTO model) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
 
-        Wallet wallet = walletRepository.findById(model.getWalletID())
+        Wallet wallet = walletRepository.findById(model.getWalletId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this wallet");
         }
 
-        Category category = categoryRepository.findById(model.getCategoryID())
+        Category category = categoryRepository.findById(model.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if (!category.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this category");
@@ -104,13 +105,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
             throw new AccessDeniedException("You do not have access to this saving goal");
         }
 
-        Wallet wallet = walletRepository.findById(model.getWalletID())
+        Wallet wallet = walletRepository.findById(model.getWalletId())
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found"));
         if (!wallet.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this wallet");
         }
 
-        Category category = categoryRepository.findById(model.getCategoryID())
+        Category category = categoryRepository.findById(model.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if (!category.getUser().equals(currentUser)) {
             throw new AccessDeniedException("You do not own this category");
@@ -154,13 +155,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     }
 
     @Transactional(readOnly = true)
-    public List<SavingGoalDTO> getSavingGoalProgressAndAlerts() {
+    public List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts() {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime currentDateTime = LocalDateTime.now(); // May 26, 2025, 8:38 PM +07
 
         return savingGoalRepository.findByWalletUser(currentUser).stream()
                 .map(savingGoal -> {
-                    SavingGoalDTO dto = applicationMapper.toSavingGoalDTO(savingGoal);
+                    SavingGoalProgressDTO dto = applicationMapper.toSavingGoalProgressDTO(savingGoal);
 
                     // Calculate saved percentage
                     BigDecimal savedPercentage = BigDecimal.ZERO;
