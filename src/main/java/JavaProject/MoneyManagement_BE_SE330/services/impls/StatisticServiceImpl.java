@@ -160,14 +160,14 @@ public class StatisticServiceImpl implements StatisticService {
 
 
             List<Transaction> transactions;
-            if(startDateTime == null && endDateTime == null) {
+            if (startDateTime == null && endDateTime == null) {
                 transactions = transactionRepository.findAllByWalletUser(currentUser);
-            } else if(startDateTime != null && endDateTime == null) {
+            } else if (startDateTime != null && endDateTime == null) {
                 transactions = transactionRepository.findByWalletWalletIdInAndTransactionDateAfter(
                         userWalletIds,
                         startDateTime
                 );
-            } else if(startDateTime == null) {
+            } else if (startDateTime == null) {
                 transactions = transactionRepository.findByWalletWalletIdInAndTransactionDateBefore(
                         userWalletIds,
                         endDateTime
@@ -210,7 +210,7 @@ public class StatisticServiceImpl implements StatisticService {
 
         // 2) define day‐bounds
         LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay   = date.atTime(LocalTime.MAX);
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
         // 3) fetch daily transactions (for totals)
         List<Transaction> dailyTxs = transactionRepository
@@ -230,9 +230,9 @@ public class StatisticServiceImpl implements StatisticService {
 
         // 5) define current week (Monday → next Monday)
         LocalDate weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate weekEnd   = weekStart.plusDays(7);
+        LocalDate weekEnd = weekStart.plusDays(7);
         LocalDateTime weekStartDT = weekStart.atStartOfDay();
-        LocalDateTime weekEndDT   = weekEnd.atStartOfDay();
+        LocalDateTime weekEndDT = weekEnd.atStartOfDay();
 
         // 6) fetch week transactions (for dailyDetails)
         List<Transaction> weekTxs = transactionRepository
@@ -524,7 +524,7 @@ public class StatisticServiceImpl implements StatisticService {
     }
 
     @Override
-    public Object generateReportData(ReportInfoDTO reportInfo) {
+    public Object generateReportData(ReportInfoDTO reportInfo, String acceptLanguage) {
         try {
             switch (reportInfo.getType().toLowerCase()) {
                 case "category-breakdown":
