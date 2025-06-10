@@ -27,7 +27,7 @@ public class TransactionDetailDTO {
     private String month = "";
     private BigDecimal amount;
     private String type = "";
-    private String category = "";
+    private String categoryName = "";
     private UUID categoryID;
     private String description;
     private UUID walletID;

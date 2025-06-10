@@ -19,7 +19,8 @@ public class SearchTransactionsDTO {
     @Pattern(regexp = "Income|Expense", flags = Pattern.Flag.CASE_INSENSITIVE)
     private String type;
 
-    private String category;
+    private String categoryName;
+    private String walletName;
     private String amountRange;
     private String keywords;
     private String timeRange;
