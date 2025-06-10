@@ -402,12 +402,8 @@ public class TransactionServiceImpl implements TransactionService {
         LocalDateTime endDateTime =
                 filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
 
-        List<UUID> userWalletIds = walletRepository.findAllByUser(currentUser)
-                .stream()
-                .map(Wallet::getWalletId)
-                .toList();
-
-        List<Transaction> transactions = transactionRepository.findAllByWalletUser(currentUser)
+        List<Transaction> transactions = transactionRepository
+                .findAllByWalletUserAndCategoryUser(currentUser)
                 .stream()
                 .filter(t -> {
                         if(startDateTime != null && endDateTime != null)
@@ -422,16 +418,26 @@ public class TransactionServiceImpl implements TransactionService {
                 )
                 .filter(t -> filter.getType() == null ||
                         t.getType().equalsIgnoreCase(filter.getType()))
-                .filter(t -> filter.getCategory() == null ||
-                        t.getCategory().getName().equalsIgnoreCase(filter.getCategory()))
+                .filter(t -> filter.getCategoryName() == null ||
+                        t.getCategory().getName().equalsIgnoreCase(filter.getCategoryName()))
+                .filter(t -> filter.getWalletName() == null ||
+                        t.getWallet().getWalletName().equalsIgnoreCase(filter.getWalletName()))
                 .filter(t -> {
-                    if (filter.getAmountRange() == null || !filter.getAmountRange().contains("-")) return true;
+                    String amountRange = filter.getAmountRange();
+                    if (amountRange == null) return true;
                     try {
-                        String[] parts = filter.getAmountRange().split("-");
-                        BigDecimal min = new BigDecimal(parts[0]);
-                        BigDecimal max = new BigDecimal(parts[1]);
                         BigDecimal amount = t.getAmount().abs();
-                        return amount.compareTo(min) >= 0 && amount.compareTo(max) <= 0;
+                        if (amountRange.endsWith("+")) {
+                            BigDecimal min = new BigDecimal(amountRange.replace("+", "").trim());
+                            return amount.compareTo(min) >= 0;
+                        } else if (amountRange.contains("-")) {
+                            String[] parts = amountRange.split("-");
+                            BigDecimal min = new BigDecimal(parts[0].trim());
+                            BigDecimal max = new BigDecimal(parts[1].trim());
+                            return amount.compareTo(min) >= 0 && amount.compareTo(max) <= 0;
+                        } else {
+                            return true;
+                        }
                     } catch (Exception e) {
                         return true;
                     }

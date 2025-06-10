@@ -124,7 +124,7 @@ public interface ApplicationMapper {
     @Mapping(target = "time", expression = "java(transaction.getTransactionDate().toLocalTime().format(java.time.format.DateTimeFormatter.ofPattern(\"HH:mm:ss\")))")
     @Mapping(target = "dayOfWeek", expression = "java(capitalizeDayOfWeek(transaction.getTransactionDate().getDayOfWeek()))")
     @Mapping(target = "month", expression = "java(transaction.getTransactionDate().getMonth().getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH))")
-    @Mapping(target = "category", source = "category.name")
+    @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "categoryID", source = "category", qualifiedByName = "extractCategoryId")
     @Mapping(target = "walletID", source = "wallet", qualifiedByName = "extractWalletId")
     @Mapping(target = "walletName", source = "wallet.walletName")

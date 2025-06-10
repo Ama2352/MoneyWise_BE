@@ -37,15 +37,17 @@ public class CalendarController {
     // Weekly summary
     @GetMapping("/weekly")
     public ResponseEntity<WeeklySummaryDTO> getWeeklySummary(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStartDate) {
-        WeeklySummaryDTO summary = statisticService.getWeeklySummary(weekStartDate);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        WeeklySummaryDTO summary = statisticService.getWeeklySummary(startDate);
         return ResponseEntity.ok(summary);
     }
 
     // Monthly summary
     @GetMapping("/monthly")
     public ResponseEntity<MonthlySummaryDTO> getMonthlySummary(
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth) {
+            @RequestParam int year,
+            @RequestParam int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
         MonthlySummaryDTO summary = statisticService.getMonthlySummary(yearMonth);
         return ResponseEntity.ok(summary);
     }
