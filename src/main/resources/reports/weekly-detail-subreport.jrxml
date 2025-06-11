@@ -7,9 +7,14 @@
     <parameter name="currencySymbol" class="java.lang.String">
         <defaultValueExpression><![CDATA["VND"]]></defaultValueExpression>
     </parameter>
+    <parameter name="languageCode" class="java.lang.String">
+        <defaultValueExpression><![CDATA["en"]]></defaultValueExpression>
+    </parameter>
+
     <field name="weekNumber" class="java.lang.String"/>
     <field name="income" class="java.math.BigDecimal"/>
     <field name="expense" class="java.math.BigDecimal"/>
+
     <columnHeader>
         <band height="30">
             <rectangle>
@@ -18,27 +23,27 @@
                     <pen lineWidth="0"/>
                 </graphicElement>
             </rectangle>
-            <staticText>
+            <textField>
                 <reportElement x="20" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="11" isBold="true"/>
+                    <font fontName="DejaVu Sans" size="11" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <text><![CDATA[Week Number]]></text>
-            </staticText>
-            <staticText>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Số Tuần" : "Week Number"]]></textFieldExpression>
+            </textField>
+            <textField>
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="11" isBold="true"/>
+                    <font fontName="DejaVu Sans" size="11" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <text><![CDATA[Income]]></text>
-            </staticText>
-            <staticText>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Thu Nhập" : "Income"]]></textFieldExpression>
+            </textField>
+            <textField>
                 <reportElement x="340" y="5" width="160" height="20" forecolor="#FFFFFF"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="11" isBold="true"/>
+                    <font fontName="DejaVu Sans" size="11" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <text><![CDATA[Expense]]></text>
-            </staticText>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Chi Tiêu" : "Expense"]]></textFieldExpression>
+            </textField>
         </band>
     </columnHeader>
     <detail>
@@ -52,21 +57,21 @@
             <textField>
                 <reportElement x="20" y="5" width="160" height="20" forecolor="#2C3E50"/>
                 <textElement verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="10"/>
+                    <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{weekNumber}]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#27AE60"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="10"/>
+                    <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{income} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{income}) : new java.text.DecimalFormat("#,##0").format($F{income})) : "0"]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="340" y="5" width="160" height="20" forecolor="#E74C3C"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
-                    <font fontName="Times New Roman" size="10"/>
+                    <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[$F{expense} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{expense}) : new java.text.DecimalFormat("#,##0").format($F{expense})) : "0"]]></textFieldExpression>
             </textField>

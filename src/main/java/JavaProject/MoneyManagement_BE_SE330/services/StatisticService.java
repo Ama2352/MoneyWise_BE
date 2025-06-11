@@ -14,5 +14,5 @@ public interface StatisticService {
     MonthlySummaryDTO getMonthlySummary(YearMonth yearMonth);
     YearlySummaryDTO getYearlySummary(int year);
     CashFlowSummaryDTO getCashFlowSummary(LocalDate startDate, LocalDate endDate);
-    Object generateReportData(ReportInfoDTO reportInfo);
+    Object generateReportData(ReportInfoDTO reportInfo, String acceptLanguage);
 }

@@ -38,17 +38,18 @@ public class ReportsController {
     private static final Logger logger = LoggerFactory.getLogger(ReportsController.class);
 
     @PostMapping("/generate")
-    public ResponseEntity<ByteArrayResource> generateReport(@Valid @RequestBody ReportInfoDTO reportInfo) {
+    public ResponseEntity<ByteArrayResource> generateReport(
+            @Valid @RequestBody ReportInfoDTO reportInfo,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         try {
-            // Validate dates
             if (reportInfo.getEndDate() != null) {
                 if (reportInfo.getStartDate().isAfter(reportInfo.getEndDate()))
                     throw new IllegalArgumentException("Start date must not be after end date");
             }
 
-            Object reportData = statisticService.generateReportData(reportInfo);
+            // Pass acceptLanguage to service for localized report data
+            Object reportData = statisticService.generateReportData(reportInfo, acceptLanguage);
 
-            // Determine currency and symbol
             String currency = reportInfo.getCurrency() != null ? reportInfo.getCurrency().toUpperCase() : "VND";
             if (!currency.equals("VND") && !currency.equals("USD")) {
                 throw new IllegalArgumentException("Unsupported currency: " + currency);
@@ -59,9 +60,12 @@ public class ReportsController {
                 reportData = currencyConverter.convertToUSD(reportData, exchangeRate, reportInfo.getType());
             }
 
+            // Determine report path
+            String languageCode = acceptLanguage != null ? acceptLanguage.split(",")[0].split("-")[0] : "en";
             String reportType = reportInfo.getType().toLowerCase();
             String jasperPath = "reports/" + reportType + ".jasper";
             ClassPathResource jasperResource = new ClassPathResource(jasperPath);
+
             if (!jasperResource.exists()) {
                 throw new IllegalArgumentException("Jasper file not found: " + jasperPath);
             }
@@ -71,6 +75,7 @@ public class ReportsController {
             parameters.put("startDate", reportInfo.getStartDate());
             parameters.put("endDate", reportInfo.getEndDate());
             parameters.put("currencySymbol", currencySymbol);
+            parameters.put("languageCode", languageCode);
 
             JasperPrint jasperPrint;
             if ("cash-flow".equalsIgnoreCase(reportInfo.getType()) && reportData instanceof CashFlowSummaryDTO cashFlow) {
@@ -91,7 +96,7 @@ public class ReportsController {
             ByteArrayResource resource = new ByteArrayResource(pdfBytes);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "attachment; filename=report_" + reportType + "_" + System.currentTimeMillis() + ".pdf");
+            headers.add("Content-Disposition", "attachment; filename=report_" + reportType + "_" + languageCode + "_" + System.currentTimeMillis() + ".pdf");
             headers.add("Content-Type", MediaType.APPLICATION_PDF_VALUE);
             headers.add("Access-Control-Expose-Headers", "Content-Disposition");
 
