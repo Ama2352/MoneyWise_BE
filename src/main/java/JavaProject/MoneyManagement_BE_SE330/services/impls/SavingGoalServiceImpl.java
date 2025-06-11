@@ -195,7 +195,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     // Not started yet
                     if (currentDateTime.isBefore(savingGoal.getStartDate())) {
                         progressStatus = "Not Started";
-                        notification = String.format("Planning: Your saving goal for %s will start on %s with a target of $%.2f.",
+                        notification = String.format("Planning: Your saving goal for %s will start on %s with a target of %.2f.",
                                 savingGoal.getCategory().getName(),
                                 savingGoal.getStartDate().toLocalDate(),
                                 savingGoal.getTargetAmount());
@@ -234,7 +234,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                                     savingGoal.getCategory().getName(), savedPercentage, expectedPercentage);
                         } else if (progressRatio2.compareTo(BigDecimal.valueOf(0.8)) >= 0) {
                             progressStatus = "On Track";
-                            notification = String.format("On track: Your saving goal for %s is progressing well with %.2f%% saved. $%.2f more needed by %s.",
+                            notification = String.format("On track: Your saving goal for %s is progressing well with %.2f%% saved. %.2f more needed by %s.",
                                     savingGoal.getCategory().getName(), savedPercentage,
                                     savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount()),
                                     endDate.toLocalDate());
@@ -244,7 +244,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                                     ? savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount())
                                     .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
                                     : BigDecimal.ZERO;
-                            notification = String.format("Attention needed: Your %s saving goal is slightly behind (%.2f%% vs %.2f%% expected). Try saving $%.2f/day to catch up.",
+                            notification = String.format("Attention needed: Your %s saving goal is slightly behind (%.2f%% vs %.2f%% expected). Try saving %.2f/day to catch up.",
                                     savingGoal.getCategory().getName(), savedPercentage, expectedPercentage, dailyNeeded);
                         } else {
                             progressStatus = "At Risk";
@@ -252,7 +252,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                                     ? savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount())
                                     .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
                                     : BigDecimal.ZERO;
-                            notification = String.format("Action required: Your %s saving goal is significantly behind (%.2f%% vs %.2f%% expected). You need to save $%.2f/day to reach your target.",
+                            notification = String.format("Action required: Your %s saving goal is significantly behind (%.2f%% vs %.2f%% expected). You need to save %.2f/day to reach your target.",
                                     savingGoal.getCategory().getName(), savedPercentage, expectedPercentage, dailyNeeded);
                         }
                     }
