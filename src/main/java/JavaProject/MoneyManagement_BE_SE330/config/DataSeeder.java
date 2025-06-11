@@ -122,50 +122,6 @@ public class DataSeeder {
             System.out.println("[DataSeeder] Test user already exists. Skipping test user seeding.");
         }
 
-        // Tạo categories và wallets cho user mới
-        List<User> allUsers = userRepository.findAll();
-        System.out.println("[DataSeeder] Found " + allUsers.size() + " users.");
-
-        for (User currentUser : allUsers) {
-            System.out.println("[DataSeeder] Processing user: " + currentUser.getUsername());
-
-            // Kiểm tra và seed categories
-            List<Category> userCategories = categoryRepository.findAllByUser(currentUser);
-            if (userCategories.isEmpty()) {
-                System.out.println("[DataSeeder] Creating categories for user: " + currentUser.getUsername());
-                List<Category> newCategories = Arrays.asList(
-                        new Category("Food & Dining", currentUser),
-                        new Category("Transportation", currentUser),
-                        new Category("Entertainment", currentUser),
-                        new Category("Housing", currentUser),
-                        new Category("Utilities", currentUser),
-                        new Category("Shopping", currentUser),
-                        new Category("Salary", currentUser),
-                        new Category("Freelance", currentUser),
-                        new Category("Gifts", currentUser),
-                        new Category("Investments", currentUser)
-                );
-                categoryRepository.saveAll(newCategories);
-                System.out.println("[DataSeeder] Categories saved for user: " + currentUser.getUsername());
-            } else {
-                System.out.println("[DataSeeder] Categories already exist for user: " + currentUser.getUsername());
-            }
-
-            // Ktra và seed wallets
-            List<Wallet> userWallets = walletRepository.findAllByUser(currentUser);
-            if (userWallets.isEmpty()) {
-                System.out.println("[DataSeeder] Creating wallets for user: " + currentUser.getUsername());
-                for (String walletName : WALLET_NAMES) {
-                    System.out.println("[DataSeeder] Creating wallet: " + walletName + " for user: " + currentUser.getUsername());
-                    Wallet wallet = new Wallet(walletName, BigDecimal.ZERO, currentUser);
-                    walletRepository.save(wallet);
-                }
-                System.out.println("[DataSeeder] Wallets saved for user: " + currentUser.getUsername());
-            } else {
-                System.out.println("[DataSeeder] Wallets already exist for user: " + currentUser.getUsername());
-            }
-        }
-
         System.out.println("[DataSeeder] Seeding process completed.");
     }
 }
