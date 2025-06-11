@@ -8,38 +8,59 @@ import java.util.List;
  * Coordinates with frontend's Accept-Language header implementation
  */
 public class LocalizationUtils {
-    
+
     /**
      * Default English category names
      */
     public static final List<String> DEFAULT_ENGLISH_CATEGORIES = Arrays.asList(
-        "Food & Dining",
-        "Transportation",
+        "Food",
+        "Electronics",
+        "Mobile",
+        "Clothing",
+        "Education",
+        "Sports",
+        "Travel",
         "Entertainment",
-        "Housing",
-        "Utilities",
+        "Health",
+        "Home",
+        "Automotive",
+        "Beauty",
+        "Gaming",
+        "Business",
+        "Finance",
         "Shopping",
-        "Salary",
-        "Freelance",
-        "Gifts",
-        "Investments"
+        "Social",
+        "Art",
+        "Photography",
+        "Tools",
+        "Pets"
     );
-
 
     /**
      * Default Vietnamese category names
      */
     public static final List<String> DEFAULT_VIETNAMESE_CATEGORIES = Arrays.asList(
         "Ăn uống",
-        "Di chuyển",
+        "Điện tử",
+        "Di động",
+        "Quần áo",
+        "Giáo dục",
+        "Thể thao",
+        "Du lịch",
         "Giải trí",
+        "Sức khỏe",
         "Nhà ở",
-        "Tiện ích",
+        "Ô tô",
+        "Làm đẹp",
+        "Chơi game",
+        "Kinh doanh",
+        "Tài chính",
         "Mua sắm",
-        "Lương",
-        "Làm tự do",
-        "Quà tặng",
-        "Đầu tư"
+        "Xã hội",
+        "Nghệ thuật",
+        "Nhiếp ảnh",
+        "Công cụ",
+        "Thú cưng"
     );
     
     /**
