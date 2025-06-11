@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -154,7 +155,7 @@ public class BudgetServiceImpl implements BudgetService {
     @Override
     public List<BudgetProgressDTO> getBudgetProgressAndAlerts() {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        LocalDateTime currentDate = LocalDateTime.now(); // May 26, 2025, 8:31 PM +07
+        LocalDateTime currentDateTime = LocalDateTime.now();
 
         return budgetRepository.findByWalletUser(currentUser).stream()
                 .map(budget -> {
@@ -170,38 +171,90 @@ public class BudgetServiceImpl implements BudgetService {
                     }
                     dto.setUsagePercentage(usagePercentage);
 
-                    // Determine progress status
+                    // Calculate expected spending based on time elapsed
+                    LocalDateTime endDate = budget.getEndDate();
+                    LocalDateTime startDate = budget.getStartDate();
+                    LocalDateTime effectiveDate = currentDateTime.isAfter(endDate) ? endDate : currentDateTime;
+
+                    long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
+                    long elapsedDays = ChronoUnit.DAYS.between(startDate, effectiveDate);
+                    BigDecimal progressRatio = totalDays > 0
+                            ? BigDecimal.valueOf(elapsedDays).divide(BigDecimal.valueOf(totalDays), 4, RoundingMode.HALF_UP)
+                            : BigDecimal.ONE;
+                    BigDecimal expectedSpending = budget.getLimitAmount().multiply(progressRatio);
+                    BigDecimal expectedPercentage = progressRatio.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+
+                    // Get remaining days
+                    long remainingDays = ChronoUnit.DAYS.between(currentDateTime, endDate);
+
+                    // Determine progress status and notification
                     String progressStatus;
                     String notification = null;
-                    if (currentDate.isBefore(budget.getStartDate())) {
-                        progressStatus = "Pending";
-                    } else if (currentDate.isAfter(budget.getEndDate())) {
-                        progressStatus = "Complete";
-                        // Notifications for completed budgets
-                        if (usagePercentage.compareTo(BigDecimal.valueOf(80)) >= 0 && usagePercentage.compareTo(BigDecimal.valueOf(100)) <= 0) {
-                            notification = String.format("Completed: Budget for category %s ended at %.2f%% of the limit.",
-                                    budget.getCategory().getName(), usagePercentage);
-                        } else if (usagePercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
-                            notification = String.format("Completed: Budget for category %s exceeded the limit by %.2f%%!",
-                                    budget.getCategory().getName(), usagePercentage);
-                        }
-                    } else {
-                        // Active budget (startDate <= currentDate <= endDate)
-                        if (usagePercentage.compareTo(BigDecimal.valueOf(80)) < 0) {
-                            progressStatus = "Safe";
-                        } else if (usagePercentage.compareTo(BigDecimal.valueOf(100)) <= 0) {
-                            progressStatus = "Warning";
-                            notification = String.format("Warning: Budget for category %s is at %.2f%% of the limit.",
+
+                    // Not started yet
+                    if (currentDateTime.isBefore(startDate)) {
+                        progressStatus = "Not Started";
+                        notification = String.format("Planning: Your budget for %s will start on %s with a limit of $%.2f.",
+                                budget.getCategory().getName(),
+                                startDate.toLocalDate(),
+                                budget.getLimitAmount());
+                    }
+                    // Budget completed or deadline passed
+                    else if (currentDateTime.isAfter(endDate)) {
+                        if (usagePercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
+                            progressStatus = "Over Budget";
+                            notification = String.format("Budget ended: Your budget for %s exceeded the limit by %.2f%%.",
+                                    budget.getCategory().getName(), usagePercentage.subtract(BigDecimal.valueOf(100)));
+                        } else if (usagePercentage.compareTo(BigDecimal.valueOf(90)) > 0) {
+                            progressStatus = "Nearly Maxed";
+                            notification = String.format("Budget ended: Your budget for %s used %.2f%% of the limit.",
                                     budget.getCategory().getName(), usagePercentage);
                         } else {
-                            progressStatus = "Over Budget";
-                            notification = String.format("Alert: Budget for category %s has exceeded the limit by %.2f%%!",
+                            progressStatus = "Under Budget";
+                            notification = String.format("Budget ended: Your budget for %s used only %.2f%% of the limit.",
                                     budget.getCategory().getName(), usagePercentage);
                         }
                     }
+                    // In progress
+                    else {
+                        BigDecimal spendingRatio = expectedSpending.compareTo(BigDecimal.ZERO) > 0
+                                ? budget.getCurrentSpending().divide(expectedSpending, 4, RoundingMode.HALF_UP)
+                                : BigDecimal.ZERO;
+
+                        // Calculate remaining budget and daily allowance
+                        BigDecimal remainingBudget = budget.getLimitAmount().subtract(budget.getCurrentSpending());
+                        BigDecimal dailyAllowance = remainingDays > 0
+                                ? remainingBudget.divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
+                                : BigDecimal.ZERO;
+
+                        if (spendingRatio.compareTo(BigDecimal.valueOf(1.5)) > 0) {
+                            progressStatus = "Critical";
+                            notification = String.format("Critical alert: Your spending on %s is significantly higher than expected (%.2f%% vs %.2f%% expected). You have $%.2f left for %d days ($%.2f/day).",
+                                    budget.getCategory().getName(), usagePercentage, expectedPercentage,
+                                    remainingBudget, remainingDays, dailyAllowance);
+                        } else if (spendingRatio.compareTo(BigDecimal.valueOf(1.2)) > 0) {
+                            progressStatus = "Warning";
+                            notification = String.format("Warning: Your spending on %s is ahead of schedule (%.2f%% vs %.2f%% expected). Try to limit to $%.2f/day for the remaining %d days.",
+                                    budget.getCategory().getName(), usagePercentage, expectedPercentage,
+                                    dailyAllowance, remainingDays);
+                        } else if (spendingRatio.compareTo(BigDecimal.valueOf(0.8)) >= 0) {
+                            progressStatus = "On Track";
+                            notification = String.format("On track: Your budget for %s is progressing as expected with %.2f%% used. You have $%.2f left until %s.",
+                                    budget.getCategory().getName(), usagePercentage,
+                                    remainingBudget, endDate.toLocalDate());
+                        } else if (spendingRatio.compareTo(BigDecimal.valueOf(0.5)) >= 0) {
+                            progressStatus = "Under Budget";
+                            notification = String.format("Good job: Your spending on %s is below expected (%.2f%% vs %.2f%% expected). You can spend up to $%.2f/day.",
+                                    budget.getCategory().getName(), usagePercentage, expectedPercentage, dailyAllowance);
+                        } else {
+                            progressStatus = "Minimal Spending";
+                            notification = String.format("Very low spending: Your budget for %s has only used %.2f%% when %.2f%% was expected. You have $%.2f remaining.",
+                                    budget.getCategory().getName(), usagePercentage, expectedPercentage, remainingBudget);
+                        }
+                    }
+
                     dto.setProgressStatus(progressStatus);
                     dto.setNotification(notification);
-
                     return dto;
                 })
                 .collect(Collectors.toList());
