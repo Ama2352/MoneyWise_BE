@@ -12,9 +12,9 @@
 	</parent>
 
 	<groupId>JavaProject</groupId>
-	<artifactId>MoneyManagement_BE_SE330</artifactId>
+	<artifactId>MoneyWise</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>MoneyManagement_BE_SE330</name>
+	<name>MoneyWise</name>
 	<description>First Spring Boot Project</description>
 
 	<properties>

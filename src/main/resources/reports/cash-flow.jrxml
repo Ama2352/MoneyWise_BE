@@ -6,7 +6,7 @@
 
     <parameter name="startDate" class="java.time.LocalDate"/>
     <parameter name="endDate" class="java.time.LocalDate"/>
-    <parameter name="cashFlowData" class="JavaProject.MoneyManagement_BE_SE330.models.dtos.statistic.CashFlowSummaryDTO"/>
+    <parameter name="cashFlowData" class="JavaProject.MoneyWise.models.dtos.statistic.CashFlowSummaryDTO"/>
     <parameter name="currencySymbol" class="java.lang.String">
         <defaultValueExpression><![CDATA["VND"]]></defaultValueExpression>
     </parameter>
