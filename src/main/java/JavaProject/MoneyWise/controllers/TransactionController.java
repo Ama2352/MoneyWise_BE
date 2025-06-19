@@ -61,26 +61,6 @@ public class TransactionController {
         return ResponseEntity.ok(deletedId);
     }
 
-    @GetMapping("/date-range")
-    public ResponseEntity<?> getTransactionsByDateRange(
-            @Valid @ModelAttribute @ParameterObject GetTransactionsByDateRangeDTO dto,
-            BindingResult bindingResult
-    ) {
-
-        if (bindingResult.hasErrors()) {
-            // Collect validation errors into a simple list or string
-            String errors = bindingResult.getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .collect(Collectors.joining(", "));
-            return ResponseEntity.badRequest().body(errors);
-        }
-
-        var transactions = transactionService.getTransactionsByDateRange(dto);
-
-        return ResponseEntity.ok(transactions);
-    }
-
     @GetMapping("/search")
     public ResponseEntity<?> searchTransactions(
             @Valid @ModelAttribute @ParameterObject SearchTransactionsDTO dto,

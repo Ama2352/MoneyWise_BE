@@ -319,65 +319,6 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TransactionDetailDTO> getTransactionsByDateRange(GetTransactionsByDateRangeDTO filter) {
-        log.info("Fetching transactions from {} to {}", filter.getStartDate(), filter.getEndDate());
-
-        User currentUser = HelperFunctions.getCurrentUser(userRepository);
-        List<Transaction> allTransactions = transactionRepository.findAllByWalletUser(currentUser);
-
-        LocalDateTime startDateTime = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : null;
-        LocalDateTime endDateTime = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
-
-        List<Transaction> filteredTransactions = allTransactions
-                .stream()
-                .filter(t -> {
-                    if (startDateTime != null && endDateTime != null)
-                        return !t.getTransactionDate().isBefore(startDateTime)
-                                && !t.getTransactionDate().isAfter(endDateTime);
-                    else if (startDateTime != null)
-                        return !t.getTransactionDate().isBefore(startDateTime);
-                    else if (endDateTime != null)
-                        return !t.getTransactionDate().isAfter(endDateTime);
-                    else
-                        return true;
-                })
-                .filter(t -> filter.getType() == null ||
-                        t.getType().equalsIgnoreCase(filter.getType()))
-                .filter(t -> filter.getCategory() == null ||
-                        t.getCategory().getName().equalsIgnoreCase(filter.getCategory()))
-                .filter(t -> {
-                    if (filter.getTimeRange() == null || !filter.getTimeRange().contains("-"))
-                        return true;
-                    try {
-                        String[] parts = filter.getTimeRange().split("-");
-                        LocalTime start = LocalTime.parse(parts[0].trim());
-                        LocalTime end = LocalTime.parse(parts[1].trim());
-                        LocalTime txnTime = t.getTransactionDate().toLocalTime();
-                        return !txnTime.isBefore(start) && !txnTime.isAfter(end);
-                    } catch (Exception e) {
-                        return true; // fallback if parsing fails
-                    }
-                })
-                .filter(t -> {
-                    if (filter.getDayOfWeek() == null)
-                        return true;
-                    try {
-                        DayOfWeek expectedDay = DayOfWeek.valueOf(filter.getDayOfWeek().toUpperCase());
-                        return t.getTransactionDate().getDayOfWeek() == expectedDay;
-                    } catch (Exception e) {
-                        return true;
-                    }
-                })
-                .sorted(Comparator.comparing(Transaction::getTransactionDate).reversed())
-                .toList();
-
-        return filteredTransactions.stream()
-                .map(applicationMapper::toTransactionDetailDTO)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<TransactionDetailDTO> searchTransactions(SearchTransactionsDTO filter) {
         log.info("Searching transactions with filters from {} to {}", filter.getStartDate(), filter.getEndDate());
 

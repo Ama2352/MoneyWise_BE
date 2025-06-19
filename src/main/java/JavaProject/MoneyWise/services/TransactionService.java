@@ -11,6 +11,5 @@ public interface TransactionService {
     TransactionDTO createTransaction(CreateTransactionDTO model);
     TransactionDTO updateTransaction(UpdateTransactionDTO model);
     UUID deleteTransactionById(UUID transactionId);
-    List<TransactionDetailDTO> getTransactionsByDateRange(GetTransactionsByDateRangeDTO filter);
     List<TransactionDetailDTO> searchTransactions(SearchTransactionsDTO filter);
 }
