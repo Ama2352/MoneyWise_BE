@@ -22,10 +22,11 @@ public class Budget {
     private UUID budgetId;
 
     @ManyToOne
-    @JoinColumn(name = "categoryId", nullable = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
     @ManyToOne
-    @JoinColumn(name = "walletId", nullable = false)
+    @JoinColumn(name = "wallet_id", nullable = false)
     private Wallet wallet;
 
     private String description;
