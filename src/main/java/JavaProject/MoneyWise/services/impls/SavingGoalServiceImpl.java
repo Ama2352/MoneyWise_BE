@@ -17,6 +17,8 @@ import JavaProject.MoneyWise.repositories.UserRepository;
 import JavaProject.MoneyWise.repositories.WalletRepository;
 import JavaProject.MoneyWise.services.SavingGoalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
     private final ApplicationMapper applicationMapper;
+    private final MessageSource messageSource;
 
     @Transactional
     @Override
@@ -174,7 +177,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     }
                     dto.setSavedPercentage(savedPercentage);
 
-                    // Calculate expected savings based on time elapsed
+                    // Calculate expected savings
                     LocalDateTime endDate = savingGoal.getEndDate();
                     LocalDateTime effectiveDate = currentDateTime.isAfter(endDate) ? endDate : currentDateTime;
                     long totalDays = ChronoUnit.DAYS.between(savingGoal.getStartDate(), endDate);
@@ -189,78 +192,162 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     long remainingDays = ChronoUnit.DAYS.between(currentDateTime, endDate);
 
                     // Determine progress status and notification
-                    String progressStatus;
-                    String notification = null;
+                    String progressStatus = determineProgressStatus(
+                            currentDateTime,
+                            savingGoal,
+                            savedPercentage,
+                            expectedSavedAmount,
+                            remainingDays
+                    );
 
-                    // Not started yet
-                    if (currentDateTime.isBefore(savingGoal.getStartDate())) {
-                        progressStatus = "Not Started";
-                        notification = String.format("Planning: Your saving goal for %s will start on %s with a target of %.2f.",
-                                savingGoal.getCategory().getName(),
-                                savingGoal.getStartDate().toLocalDate(),
-                                savingGoal.getTargetAmount());
-                    }
-                    // Goal completed or deadline passed
-                    else if (currentDateTime.isAfter(endDate)) {
-                        if (savedPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
-                            progressStatus = "Achieved";
-                            notification = String.format("Success: You've achieved your saving goal for %s with %.2f%% of your target!",
-                                    savingGoal.getCategory().getName(), savedPercentage);
-                        } else if (savedPercentage.compareTo(BigDecimal.valueOf(75)) >= 0) {
-                            progressStatus = "Partially Achieved";
-                            notification = String.format("Almost there: Your saving goal for %s reached %.2f%% of the target.",
-                                    savingGoal.getCategory().getName(), savedPercentage);
-                        } else {
-                            progressStatus = "Missed Target";
-                            notification = String.format("Goal ended: Your saving goal for %s reached only %.2f%% of the target.",
-                                    savingGoal.getCategory().getName(), savedPercentage);
-                        }
-                    }
-                    // Goal already achieved before deadline
-                    else if (savingGoal.getSavedAmount().compareTo(savingGoal.getTargetAmount()) >= 0) {
-                        progressStatus = "Achieved Early";
-                        notification = String.format("Excellent! You've already achieved your saving goal for %s with %.2f%% and still have %d days remaining.",
-                                savingGoal.getCategory().getName(), savedPercentage, remainingDays);
-                    }
-                    // In progress
-                    else {
-                        BigDecimal progressRatio2 = expectedSavedAmount.compareTo(BigDecimal.ZERO) > 0
-                                ? savingGoal.getSavedAmount().divide(expectedSavedAmount, 4, RoundingMode.HALF_UP)
-                                : BigDecimal.ZERO;
+                    String notification = generateNotification(
+                            progressStatus,
+                            savingGoal,
+                            savedPercentage,
+                            expectedPercentage,
+                            remainingDays,
+                            expectedSavedAmount
+                    );
 
-                        if (progressRatio2.compareTo(BigDecimal.valueOf(1.2)) > 0) {
-                            progressStatus = "Ahead";
-                            notification = String.format("Great progress! You're ahead on your %s saving goal (%.2f%% saved vs %.2f%% expected).",
-                                    savingGoal.getCategory().getName(), savedPercentage, expectedPercentage);
-                        } else if (progressRatio2.compareTo(BigDecimal.valueOf(0.8)) >= 0) {
-                            progressStatus = "On Track";
-                            notification = String.format("On track: Your saving goal for %s is progressing well with %.2f%% saved. %.2f more needed by %s.",
-                                    savingGoal.getCategory().getName(), savedPercentage,
-                                    savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount()),
-                                    endDate.toLocalDate());
-                        } else if (progressRatio2.compareTo(BigDecimal.valueOf(0.6)) >= 0) {
-                            progressStatus = "Slightly Behind";
-                            BigDecimal dailyNeeded = remainingDays > 0
-                                    ? savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount())
-                                    .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
-                                    : BigDecimal.ZERO;
-                            notification = String.format("Attention needed: Your %s saving goal is slightly behind (%.2f%% vs %.2f%% expected). Try saving %.2f/day to catch up.",
-                                    savingGoal.getCategory().getName(), savedPercentage, expectedPercentage, dailyNeeded);
-                        } else {
-                            progressStatus = "At Risk";
-                            BigDecimal dailyNeeded = remainingDays > 0
-                                    ? savingGoal.getTargetAmount().subtract(savingGoal.getSavedAmount())
-                                    .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
-                                    : BigDecimal.ZERO;
-                            notification = String.format("Action required: Your %s saving goal is significantly behind (%.2f%% vs %.2f%% expected). You need to save %.2f/day to reach your target.",
-                                    savingGoal.getCategory().getName(), savedPercentage, expectedPercentage, dailyNeeded);
-                        }
-                    }
+                    // Localize the progress status
+                    String localizedProgressStatus = messageSource.getMessage(
+                            "saving.goal.status." + progressStatus.toLowerCase().replace(" ", "."),
+                            null,
+                            LocaleContextHolder.getLocale()
+                    );
 
-                    dto.setProgressStatus(progressStatus);
+                    dto.setProgressStatus(localizedProgressStatus);
                     dto.setNotification(notification);
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String determineProgressStatus(
+            LocalDateTime currentDateTime,
+            SavingGoal savingGoal,
+            BigDecimal savedPercentage,
+            BigDecimal expectedSavedAmount,
+            long remainingDays
+    ) {
+        if (currentDateTime.isBefore(savingGoal.getStartDate())) {
+            return "Not Started";
+        }
+
+        if (currentDateTime.isAfter(savingGoal.getEndDate())) {
+            if (savedPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
+                return "Achieved";
+            } else if (savedPercentage.compareTo(BigDecimal.valueOf(75)) >= 0) {
+                return "Partially Achieved";
+            } else {
+                return "Missed Target";
+            }
+        }
+
+        if (savingGoal.getSavedAmount().compareTo(savingGoal.getTargetAmount()) >= 0) {
+            return "Achieved Early";
+        }
+
+        BigDecimal progressRatio = expectedSavedAmount.compareTo(BigDecimal.ZERO) > 0
+                ? savingGoal.getSavedAmount().divide(expectedSavedAmount, 4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        if (progressRatio.compareTo(BigDecimal.valueOf(1.2)) > 0) {
+            return "Ahead";
+        } else if (progressRatio.compareTo(BigDecimal.valueOf(0.8)) >= 0) {
+            return "On Track";
+        } else if (progressRatio.compareTo(BigDecimal.valueOf(0.6)) >= 0) {
+            return "Slightly Behind";
+        } else {
+            return "At Risk";
+        }
+    }
+
+    private String generateNotification(
+            String progressStatus,
+            SavingGoal savingGoal,
+            BigDecimal savedPercentage,
+            BigDecimal expectedPercentage,
+            long remainingDays,
+            BigDecimal expectedSavedAmount
+    ) {
+        String categoryName = savingGoal.getCategory().getName();
+        String startDate = savingGoal.getStartDate().toLocalDate().toString();
+        String endDate = savingGoal.getEndDate().toLocalDate().toString();
+        BigDecimal targetAmount = savingGoal.getTargetAmount();
+        BigDecimal savedAmount = savingGoal.getSavedAmount();
+
+        BigDecimal dailyNeeded = remainingDays > 0
+                ? targetAmount.subtract(savedAmount)
+                .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        switch (progressStatus) {
+            case "Not Started":
+                return messageSource.getMessage(
+                        "saving.goal.not.started",
+                        new Object[]{categoryName, startDate, targetAmount},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Achieved":
+                return messageSource.getMessage(
+                        "saving.goal.achieved",
+                        new Object[]{categoryName, savedPercentage},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Partially Achieved":
+                return messageSource.getMessage(
+                        "saving.goal.partially.achieved",
+                        new Object[]{categoryName, savedPercentage},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Missed Target":
+                return messageSource.getMessage(
+                        "saving.goal.missed.target",
+                        new Object[]{categoryName, savedPercentage},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Achieved Early":
+                return messageSource.getMessage(
+                        "saving.goal.achieved.early",
+                        new Object[]{categoryName, savedPercentage, remainingDays},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Ahead":
+                return messageSource.getMessage(
+                        "saving.goal.ahead",
+                        new Object[]{categoryName, savedPercentage, expectedPercentage},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "On Track":
+                return messageSource.getMessage(
+                        "saving.goal.on.track",
+                        new Object[]{categoryName, savedPercentage, targetAmount.subtract(savedAmount), endDate},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "Slightly Behind":
+                return messageSource.getMessage(
+                        "saving.goal.slightly.behind",
+                        new Object[]{categoryName, savedPercentage, expectedPercentage, dailyNeeded},
+                        LocaleContextHolder.getLocale()
+                );
+
+            case "At Risk":
+                return messageSource.getMessage(
+                        "saving.goal.at.risk",
+                        new Object[]{categoryName, savedPercentage, expectedPercentage, dailyNeeded},
+                        LocaleContextHolder.getLocale()
+                );
+
+            default:
+                return "";
+        }
     }
 }
