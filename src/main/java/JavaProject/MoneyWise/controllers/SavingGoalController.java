@@ -65,17 +65,18 @@ public class SavingGoalController {
     @Operation(summary = "Search for savingGoals based on criteria")
     @GetMapping("/search")
     public ResponseEntity<List<SavingGoalProgressDTO>> searchSavingGoals(
-            @Valid @ModelAttribute @ParameterObject SearchSavingGoalsDTO dto
-    ) {
-        List<SavingGoalProgressDTO> result = savingGoalService.searchSavingGoals(dto);
+            @Valid @ModelAttribute @ParameterObject SearchSavingGoalsDTO dto,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<SavingGoalProgressDTO> result = savingGoalService.searchSavingGoals(dto, acceptLanguage);
         return ResponseEntity.ok(result);
     }
 
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Retrieve progress and alerts for active saving goals")
     @GetMapping("/progress")
-    public ResponseEntity<List<SavingGoalProgressDTO>> getSavingGoalProgressAndAlerts() {
-        List<SavingGoalProgressDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts();
+    public ResponseEntity<List<SavingGoalProgressDTO>> getSavingGoalProgressAndAlerts(
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<SavingGoalProgressDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts(acceptLanguage);
         return ResponseEntity.ok(progress);
     }
 }

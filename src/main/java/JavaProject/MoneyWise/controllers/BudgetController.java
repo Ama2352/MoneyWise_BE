@@ -67,17 +67,18 @@ public class BudgetController {
     @Operation(summary = "Search for budgets based on criteria")
     @GetMapping("/search")
     public ResponseEntity<List<BudgetProgressDTO>> searchBudgets(
-            @Valid @ModelAttribute @ParameterObject SearchBudgetsDTO dto
-    ) {
-        List<BudgetProgressDTO> result = budgetService.searchBudgets(dto);
+            @Valid @ModelAttribute @ParameterObject SearchBudgetsDTO dto,
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<BudgetProgressDTO> result = budgetService.searchBudgets(dto, acceptLanguage);
         return ResponseEntity.ok(result);
     }
 
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Retrieve progress and alerts for active budgets")
     @GetMapping("/progress")
-    public ResponseEntity<List<BudgetProgressDTO>> getBudgetProgressAndAlerts() {
-        List<BudgetProgressDTO> progress = budgetService.getBudgetProgressAndAlerts();
+    public ResponseEntity<List<BudgetProgressDTO>> getBudgetProgressAndAlerts(
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        List<BudgetProgressDTO> progress = budgetService.getBudgetProgressAndAlerts(acceptLanguage);
         return ResponseEntity.ok(progress);
     }
 }

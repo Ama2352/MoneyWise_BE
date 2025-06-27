@@ -23,8 +23,8 @@ public interface SavingGoalService {
     UUID deleteSavingGoal(UUID id);
 
     @Transactional(readOnly = true)
-    List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter);
+    List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter, String acceptLanguage);
 
     @Transactional(readOnly = true)
-    List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts();
+    List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts(String acceptLanguage);
 }

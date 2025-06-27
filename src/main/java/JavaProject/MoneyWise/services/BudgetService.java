@@ -22,9 +22,9 @@ public interface BudgetService {
     @Transactional
     UUID deleteBudget(UUID id);
 
-    @Transactional
-    List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter);
+    @Transactional(readOnly = true)
+    List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter, String acceptLanguage);
 
     @Transactional(readOnly = true)
-    List<BudgetProgressDTO> getBudgetProgressAndAlerts();
+    List<BudgetProgressDTO> getBudgetProgressAndAlerts(String acceptLanguage);
 }

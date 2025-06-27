@@ -57,10 +57,12 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         }
 
         // Check for overlapping saving goals
-        List<SavingGoal> overlaps = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                category, wallet, model.getEndDate(), model.getStartDate());
+        List<SavingGoal> overlaps = savingGoalRepository
+                .findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        category, wallet, model.getEndDate(), model.getStartDate());
         if (!overlaps.isEmpty()) {
-            throw new IllegalArgumentException("A saving goal already exists for this category, wallet, and date range");
+            throw new IllegalArgumentException(
+                    "A saving goal already exists for this category, wallet, and date range");
         }
 
         SavingGoal savingGoal = applicationMapper.toSavingGoalEntity(model);
@@ -119,11 +121,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         }
 
         // Check for overlaps (excluding current saving goal)
-        List<SavingGoal> overlaps = savingGoalRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                category, wallet, model.getEndDate(), model.getStartDate());
+        List<SavingGoal> overlaps = savingGoalRepository
+                .findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        category, wallet, model.getEndDate(), model.getStartDate());
         overlaps.remove(savingGoal);
         if (!overlaps.isEmpty()) {
-            throw new IllegalArgumentException("A saving goal already exists for this category, wallet, and date range");
+            throw new IllegalArgumentException(
+                    "A saving goal already exists for this category, wallet, and date range");
         }
 
         savingGoal.setCategory(category);
@@ -153,12 +157,15 @@ public class SavingGoalServiceImpl implements SavingGoalService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter) {
+    public List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter, String acceptLanguage) {
+        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+            LocaleContextHolder.setLocale(Locale.forLanguageTag(acceptLanguage));
+        }
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime startDateTime = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : null;
         LocalDateTime endDateTime = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
 
-        List<SavingGoalProgressDTO> savingGoalProgress = getSavingGoalProgressAndAlerts();
+        List<SavingGoalProgressDTO> savingGoalProgress = getSavingGoalProgressAndAlerts(acceptLanguage);
 
         Map<UUID, SavingGoalProgressDTO> progressMap = savingGoalProgress.stream()
                 .collect(Collectors.toMap(SavingGoalProgressDTO::getSavingGoalId, dto -> dto));
@@ -197,7 +204,10 @@ public class SavingGoalServiceImpl implements SavingGoalService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts() {
+    public List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts(String acceptLanguage) {
+        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+            LocaleContextHolder.setLocale(Locale.forLanguageTag(acceptLanguage));
+        }
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime currentDateTime = LocalDateTime.now();
 
@@ -221,10 +231,12 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     long totalDays = ChronoUnit.DAYS.between(savingGoal.getStartDate(), endDate);
                     long elapsedDays = ChronoUnit.DAYS.between(savingGoal.getStartDate(), effectiveDate);
                     BigDecimal progressRatio = totalDays > 0
-                            ? BigDecimal.valueOf(elapsedDays).divide(BigDecimal.valueOf(totalDays), 4, RoundingMode.HALF_UP)
+                            ? BigDecimal.valueOf(elapsedDays).divide(BigDecimal.valueOf(totalDays), 4,
+                                    RoundingMode.HALF_UP)
                             : BigDecimal.ONE;
                     BigDecimal expectedSavedAmount = savingGoal.getTargetAmount().multiply(progressRatio);
-                    BigDecimal expectedPercentage = progressRatio.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal expectedPercentage = progressRatio.multiply(BigDecimal.valueOf(100)).setScale(2,
+                            RoundingMode.HALF_UP);
 
                     // Get remaining days
                     long remainingDays = ChronoUnit.DAYS.between(currentDateTime, endDate);
@@ -235,8 +247,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                             savingGoal,
                             savedPercentage,
                             expectedSavedAmount,
-                            remainingDays
-                    );
+                            remainingDays);
 
                     String notification = generateNotification(
                             progressStatus,
@@ -244,15 +255,13 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                             savedPercentage,
                             expectedPercentage,
                             remainingDays,
-                            expectedSavedAmount
-                    );
+                            expectedSavedAmount);
 
                     // Localize the progress status
                     String localizedProgressStatus = messageSource.getMessage(
                             "saving.goal.status." + progressStatus.toLowerCase().replace(" ", "."),
                             null,
-                            LocaleContextHolder.getLocale()
-                    );
+                            LocaleContextHolder.getLocale());
 
                     dto.setProgressStatus(localizedProgressStatus);
                     dto.setNotification(notification);
@@ -266,8 +275,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
             SavingGoal savingGoal,
             BigDecimal savedPercentage,
             BigDecimal expectedSavedAmount,
-            long remainingDays
-    ) {
+            long remainingDays) {
         if (currentDateTime.isBefore(savingGoal.getStartDate())) {
             return "Not Started";
         }
@@ -307,8 +315,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
             BigDecimal savedPercentage,
             BigDecimal expectedPercentage,
             long remainingDays,
-            BigDecimal expectedSavedAmount
-    ) {
+            BigDecimal expectedSavedAmount) {
         String categoryName = savingGoal.getCategory().getName();
         String startDate = savingGoal.getStartDate().toLocalDate().toString();
         String endDate = savingGoal.getEndDate().toLocalDate().toString();
@@ -317,72 +324,63 @@ public class SavingGoalServiceImpl implements SavingGoalService {
 
         BigDecimal dailyNeeded = remainingDays > 0
                 ? targetAmount.subtract(savedAmount)
-                .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
+                        .divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
         switch (progressStatus) {
             case "Not Started":
                 return messageSource.getMessage(
                         "saving.goal.not.started",
-                        new Object[]{categoryName, startDate, targetAmount},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, startDate, targetAmount },
+                        LocaleContextHolder.getLocale());
 
             case "Achieved":
                 return messageSource.getMessage(
                         "saving.goal.achieved",
-                        new Object[]{categoryName, savedPercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage },
+                        LocaleContextHolder.getLocale());
 
             case "Partially Achieved":
                 return messageSource.getMessage(
                         "saving.goal.partially.achieved",
-                        new Object[]{categoryName, savedPercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage },
+                        LocaleContextHolder.getLocale());
 
             case "Missed Target":
                 return messageSource.getMessage(
                         "saving.goal.missed.target",
-                        new Object[]{categoryName, savedPercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage },
+                        LocaleContextHolder.getLocale());
 
             case "Achieved Early":
                 return messageSource.getMessage(
                         "saving.goal.achieved.early",
-                        new Object[]{categoryName, savedPercentage, remainingDays},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage, remainingDays },
+                        LocaleContextHolder.getLocale());
 
             case "Ahead":
                 return messageSource.getMessage(
                         "saving.goal.ahead",
-                        new Object[]{categoryName, savedPercentage, expectedPercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage, expectedPercentage },
+                        LocaleContextHolder.getLocale());
 
             case "On Track":
                 return messageSource.getMessage(
                         "saving.goal.on.track",
-                        new Object[]{categoryName, savedPercentage, targetAmount.subtract(savedAmount), endDate},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage, targetAmount.subtract(savedAmount), endDate },
+                        LocaleContextHolder.getLocale());
 
             case "Slightly Behind":
                 return messageSource.getMessage(
                         "saving.goal.slightly.behind",
-                        new Object[]{categoryName, savedPercentage, expectedPercentage, dailyNeeded},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage, expectedPercentage, dailyNeeded },
+                        LocaleContextHolder.getLocale());
 
             case "At Risk":
                 return messageSource.getMessage(
                         "saving.goal.at.risk",
-                        new Object[]{categoryName, savedPercentage, expectedPercentage, dailyNeeded},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, savedPercentage, expectedPercentage, dailyNeeded },
+                        LocaleContextHolder.getLocale());
 
             default:
                 return "";

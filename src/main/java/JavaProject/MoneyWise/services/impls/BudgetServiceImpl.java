@@ -27,6 +27,7 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -64,8 +65,9 @@ public class BudgetServiceImpl implements BudgetService {
         }
 
         // Check for overlapping budgets
-        List<Budget> overlaps = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                category, wallet, model.getEndDate(), model.getStartDate());
+        List<Budget> overlaps = budgetRepository
+                .findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        category, wallet, model.getEndDate(), model.getStartDate());
         if (!overlaps.isEmpty()) {
             throw new IllegalArgumentException("A budget already exists for this category, wallet, and date range");
         }
@@ -123,8 +125,9 @@ public class BudgetServiceImpl implements BudgetService {
         }
 
         // Check for overlaps (excluding current budget)
-        List<Budget> overlaps = budgetRepository.findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                category, wallet, model.getEndDate(), model.getStartDate());
+        List<Budget> overlaps = budgetRepository
+                .findByCategoryAndWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                        category, wallet, model.getEndDate(), model.getStartDate());
         overlaps.remove(budget);
         if (!overlaps.isEmpty()) {
             throw new IllegalArgumentException("A budget already exists for this category, wallet, and date range");
@@ -157,12 +160,15 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter) {
+    public List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter, String acceptLanguage) {
+        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+            LocaleContextHolder.setLocale(Locale.forLanguageTag(acceptLanguage));
+        }
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime startDateTime = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : null;
         LocalDateTime endDateTime = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
 
-        List<BudgetProgressDTO> budgetProgress = getBudgetProgressAndAlerts();
+        List<BudgetProgressDTO> budgetProgress = getBudgetProgressAndAlerts(acceptLanguage);
 
         // Create a map for quick lookup by budgetId
         Map<UUID, BudgetProgressDTO> progressMap = budgetProgress.stream()
@@ -172,10 +178,10 @@ public class BudgetServiceImpl implements BudgetService {
                 .findByWalletUser(currentUser)
                 .stream()
                 .filter(budget -> {
-                    if(startDateTime != null && endDateTime != null)
+                    if (startDateTime != null && endDateTime != null)
                         return !budget.getStartDate().isAfter(endDateTime) &&
                                 !budget.getEndDate().isBefore(startDateTime);
-                     else if (startDateTime != null)
+                    else if (startDateTime != null)
                         return !budget.getStartDate().isBefore(startDateTime);
                     else if (endDateTime != null)
                         return !budget.getEndDate().isAfter(endDateTime);
@@ -204,7 +210,10 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<BudgetProgressDTO> getBudgetProgressAndAlerts() {
+    public List<BudgetProgressDTO> getBudgetProgressAndAlerts(String acceptLanguage) {
+        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+            LocaleContextHolder.setLocale(Locale.forLanguageTag(acceptLanguage));
+        }
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
         LocalDateTime currentDateTime = LocalDateTime.now();
 
@@ -230,10 +239,12 @@ public class BudgetServiceImpl implements BudgetService {
                     long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
                     long elapsedDays = ChronoUnit.DAYS.between(startDate, effectiveDate);
                     BigDecimal progressRatio = totalDays > 0
-                            ? BigDecimal.valueOf(elapsedDays).divide(BigDecimal.valueOf(totalDays), 4, RoundingMode.HALF_UP)
+                            ? BigDecimal.valueOf(elapsedDays).divide(BigDecimal.valueOf(totalDays), 4,
+                                    RoundingMode.HALF_UP)
                             : BigDecimal.ONE;
                     BigDecimal expectedSpending = budget.getLimitAmount().multiply(progressRatio);
-                    BigDecimal expectedPercentage = progressRatio.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal expectedPercentage = progressRatio.multiply(BigDecimal.valueOf(100)).setScale(2,
+                            RoundingMode.HALF_UP);
 
                     // Get remaining days
                     long remainingDays = ChronoUnit.DAYS.between(currentDateTime, endDate);
@@ -244,8 +255,7 @@ public class BudgetServiceImpl implements BudgetService {
                             budget,
                             usagePercentage,
                             expectedSpending,
-                            remainingDays
-                    );
+                            remainingDays);
 
                     String notification = generateNotification(
                             progressStatus,
@@ -253,15 +263,13 @@ public class BudgetServiceImpl implements BudgetService {
                             usagePercentage,
                             expectedPercentage,
                             remainingDays,
-                            expectedSpending
-                    );
+                            expectedSpending);
 
                     // Localize the progress status
                     String localizedProgressStatus = messageSource.getMessage(
                             "budget.status." + progressStatus.toLowerCase().replace(" ", "."),
                             null,
-                            LocaleContextHolder.getLocale()
-                    );
+                            LocaleContextHolder.getLocale());
 
                     dto.setProgressStatus(localizedProgressStatus);
                     dto.setNotification(notification);
@@ -275,8 +283,7 @@ public class BudgetServiceImpl implements BudgetService {
             Budget budget,
             BigDecimal usagePercentage,
             BigDecimal expectedSpending,
-            long remainingDays
-    ) {
+            long remainingDays) {
         if (currentDateTime.isBefore(budget.getStartDate())) {
             return "Not Started";
         }
@@ -314,8 +321,7 @@ public class BudgetServiceImpl implements BudgetService {
             BigDecimal usagePercentage,
             BigDecimal expectedPercentage,
             long remainingDays,
-            BigDecimal expectedSpending
-    ) {
+            BigDecimal expectedSpending) {
         String categoryName = budget.getCategory().getName();
         String startDate = budget.getStartDate().toLocalDate().toString();
         String endDate = budget.getEndDate().toLocalDate().toString();
@@ -330,58 +336,52 @@ public class BudgetServiceImpl implements BudgetService {
             case "Not Started":
                 return messageSource.getMessage(
                         "budget.not.started",
-                        new Object[]{categoryName, startDate, limitAmount},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, startDate, limitAmount },
+                        LocaleContextHolder.getLocale());
 
             case "Over Budget":
                 return messageSource.getMessage(
                         "budget.over.budget",
-                        new Object[]{categoryName, usagePercentage.subtract(BigDecimal.valueOf(100))},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage.subtract(BigDecimal.valueOf(100)) },
+                        LocaleContextHolder.getLocale());
 
             case "Nearly Maxed":
                 return messageSource.getMessage(
                         "budget.nearly.maxed",
-                        new Object[]{categoryName, usagePercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage },
+                        LocaleContextHolder.getLocale());
 
             case "Under Budget":
                 return messageSource.getMessage(
                         "budget.under.budget",
-                        new Object[]{categoryName, usagePercentage},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage },
+                        LocaleContextHolder.getLocale());
 
             case "Critical":
                 return messageSource.getMessage(
                         "budget.critical",
-                        new Object[]{categoryName, usagePercentage, expectedPercentage, remainingBudget, remainingDays, dailyAllowance},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage, expectedPercentage, remainingBudget,
+                                remainingDays, dailyAllowance },
+                        LocaleContextHolder.getLocale());
 
             case "Warning":
                 return messageSource.getMessage(
                         "budget.warning",
-                        new Object[]{categoryName, usagePercentage, expectedPercentage, dailyAllowance, remainingDays},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage, expectedPercentage, dailyAllowance,
+                                remainingDays },
+                        LocaleContextHolder.getLocale());
 
             case "On Track":
                 return messageSource.getMessage(
                         "budget.on.track",
-                        new Object[]{categoryName, usagePercentage, remainingBudget, endDate},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage, remainingBudget, endDate },
+                        LocaleContextHolder.getLocale());
 
             case "Minimal Spending":
                 return messageSource.getMessage(
                         "budget.minimal.spending",
-                        new Object[]{categoryName, usagePercentage, expectedPercentage, remainingBudget},
-                        LocaleContextHolder.getLocale()
-                );
+                        new Object[] { categoryName, usagePercentage, expectedPercentage, remainingBudget },
+                        LocaleContextHolder.getLocale());
 
             default:
                 return "";

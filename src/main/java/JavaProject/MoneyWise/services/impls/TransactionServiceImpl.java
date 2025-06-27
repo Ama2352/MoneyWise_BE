@@ -30,6 +30,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final BudgetRepository budgetRepository;
     private final SavingGoalRepository savingGoalRepository;
     private final SavingGoalService savingGoalService;
+    private final String acceptLanguage = "en";
 
     // --- Khai báo hằng số để tránh hardcode chuỗi và dễ bảo trì ---
     private static final String TRANSACTION_TYPE_INCOME = "income";
@@ -129,8 +130,6 @@ public class TransactionServiceImpl implements TransactionService {
                         transaction.getWallet(),
                         transaction.getAmount(),
                         transaction.getTransactionDate());
-                // Refresh saving goals to update savedPercentage
-                savingGoalService.getSavingGoalProgressAndAlerts();
             }
         }
 
@@ -198,8 +197,6 @@ public class TransactionServiceImpl implements TransactionService {
                             transaction.getWallet(),
                             transaction.getAmount().negate(), // Reverse the amount
                             transaction.getTransactionDate());
-                    // Refresh saving goals to update savedPercentage
-                    savingGoalService.getSavingGoalProgressAndAlerts();
                 }
             }
 
@@ -301,8 +298,6 @@ public class TransactionServiceImpl implements TransactionService {
                         transaction.getWallet(),
                         transaction.getAmount().negate(),
                         transaction.getTransactionDate());
-                // Refresh saving goals to update savedPercentage
-                savingGoalService.getSavingGoalProgressAndAlerts();
             }
         }
 
