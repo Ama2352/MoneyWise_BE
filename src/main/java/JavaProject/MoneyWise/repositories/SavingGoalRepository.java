@@ -29,4 +29,6 @@ public interface SavingGoalRepository extends JpaRepository<SavingGoal, UUID> {
             Category category, User user, LocalDateTime startDate, LocalDateTime endDate);
 
     List<SavingGoal> findByWalletUser(User currentUser);
+
+    List<SavingGoal> findByWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(Wallet wallet, LocalDateTime localDateTime, LocalDateTime localDateTime1);
 }

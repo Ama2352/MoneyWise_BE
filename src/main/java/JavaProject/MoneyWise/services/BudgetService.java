@@ -1,9 +1,6 @@
 package JavaProject.MoneyWise.services;
 
-import JavaProject.MoneyWise.models.dtos.budget.BudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.BudgetProgressDTO;
-import JavaProject.MoneyWise.models.dtos.budget.CreateBudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.UpdateBudgetDTO;
+import JavaProject.MoneyWise.models.dtos.budget.*;
 import JavaProject.MoneyWise.models.entities.Budget;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +21,9 @@ public interface BudgetService {
 
     @Transactional
     UUID deleteBudget(UUID id);
+
+    @Transactional
+    List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter);
 
     @Transactional(readOnly = true)
     List<BudgetProgressDTO> getBudgetProgressAndAlerts();

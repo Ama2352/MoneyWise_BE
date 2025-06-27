@@ -3,10 +3,7 @@ package JavaProject.MoneyWise.services.impls;
 import JavaProject.MoneyWise.helper.ApplicationMapper;
 import JavaProject.MoneyWise.helper.HelperFunctions;
 import JavaProject.MoneyWise.helper.ResourceNotFoundException;
-import JavaProject.MoneyWise.models.dtos.budget.BudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.BudgetProgressDTO;
-import JavaProject.MoneyWise.models.dtos.budget.CreateBudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.UpdateBudgetDTO;
+import JavaProject.MoneyWise.models.dtos.budget.*;
 import JavaProject.MoneyWise.models.entities.Budget;
 import JavaProject.MoneyWise.models.entities.Category;
 import JavaProject.MoneyWise.models.entities.User;
@@ -26,8 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -152,6 +153,53 @@ public class BudgetServiceImpl implements BudgetService {
         }
         budgetRepository.delete(budget);
         return id;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter) {
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        LocalDateTime startDateTime = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : null;
+        LocalDateTime endDateTime = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
+
+        List<BudgetProgressDTO> budgetProgress = getBudgetProgressAndAlerts();
+
+        // Create a map for quick lookup by budgetId
+        Map<UUID, BudgetProgressDTO> progressMap = budgetProgress.stream()
+                .collect(Collectors.toMap(BudgetProgressDTO::getBudgetId, dto -> dto));
+
+        List<Budget> budgets = budgetRepository
+                .findByWalletUser(currentUser)
+                .stream()
+                .filter(budget -> {
+                    if(startDateTime != null && endDateTime != null)
+                        return !budget.getStartDate().isAfter(endDateTime) &&
+                                !budget.getEndDate().isBefore(startDateTime);
+                     else if (startDateTime != null)
+                        return !budget.getStartDate().isBefore(startDateTime);
+                    else if (endDateTime != null)
+                        return !budget.getEndDate().isAfter(endDateTime);
+                    else
+                        return true;
+
+                })
+                .filter(budget -> filter.getKeywords() == null ||
+                        (budget.getDescription() != null &&
+                                budget.getDescription().toLowerCase().contains(filter.getKeywords().toLowerCase())))
+                .filter(budget -> filter.getCategoryName() == null ||
+                        budget.getCategory().getName().equalsIgnoreCase(filter.getCategoryName()))
+                .filter(budget -> filter.getWalletName() == null ||
+                        budget.getWallet().getWalletName().equalsIgnoreCase(filter.getWalletName()))
+                .filter(budget -> filter.getLimitAmount() == null ||
+                        budget.getLimitAmount().compareTo(filter.getLimitAmount()) == 0)
+                .sorted(Comparator.comparing(Budget::getCreatedAt).reversed())
+                .toList();
+
+        // Map filtered budgets to their corresponding BudgetProgressDTOs
+        return budgets.stream()
+                .map(budget -> progressMap.get(budget.getBudgetId()))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Transactional(readOnly = true)

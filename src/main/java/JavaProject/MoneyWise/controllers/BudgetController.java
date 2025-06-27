@@ -1,15 +1,13 @@
 package JavaProject.MoneyWise.controllers;
 
-import JavaProject.MoneyWise.models.dtos.budget.BudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.BudgetProgressDTO;
-import JavaProject.MoneyWise.models.dtos.budget.CreateBudgetDTO;
-import JavaProject.MoneyWise.models.dtos.budget.UpdateBudgetDTO;
+import JavaProject.MoneyWise.models.dtos.budget.*;
 import JavaProject.MoneyWise.services.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,6 +61,16 @@ public class BudgetController {
     public ResponseEntity<UUID> deleteBudget(@PathVariable("budgetId") UUID budgetId) {
         UUID deletedId = budgetService.deleteBudget(budgetId);
         return ResponseEntity.ok(deletedId);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Search for budgets based on criteria")
+    @GetMapping("/search")
+    public ResponseEntity<List<BudgetProgressDTO>> searchBudgets(
+            @Valid @ModelAttribute @ParameterObject SearchBudgetsDTO dto
+    ) {
+        List<BudgetProgressDTO> result = budgetService.searchBudgets(dto);
+        return ResponseEntity.ok(result);
     }
 
     @SecurityRequirement(name = "bearerAuth")

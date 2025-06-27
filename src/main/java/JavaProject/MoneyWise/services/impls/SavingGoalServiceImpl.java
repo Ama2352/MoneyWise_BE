@@ -3,14 +3,8 @@ package JavaProject.MoneyWise.services.impls;
 import JavaProject.MoneyWise.helper.ApplicationMapper;
 import JavaProject.MoneyWise.helper.HelperFunctions;
 import JavaProject.MoneyWise.helper.ResourceNotFoundException;
-import JavaProject.MoneyWise.models.dtos.savingGoal.CreateSavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalProgressDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.UpdateSavingGoalDTO;
-import JavaProject.MoneyWise.models.entities.Category;
-import JavaProject.MoneyWise.models.entities.SavingGoal;
-import JavaProject.MoneyWise.models.entities.User;
-import JavaProject.MoneyWise.models.entities.Wallet;
+import JavaProject.MoneyWise.models.dtos.savingGoal.*;
+import JavaProject.MoneyWise.models.entities.*;
 import JavaProject.MoneyWise.repositories.CategoryRepository;
 import JavaProject.MoneyWise.repositories.SavingGoalRepository;
 import JavaProject.MoneyWise.repositories.UserRepository;
@@ -26,9 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -155,6 +149,50 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         }
         savingGoalRepository.delete(savingGoal);
         return id;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter) {
+        User currentUser = HelperFunctions.getCurrentUser(userRepository);
+        LocalDateTime startDateTime = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : null;
+        LocalDateTime endDateTime = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : null;
+
+        List<SavingGoalProgressDTO> savingGoalProgress = getSavingGoalProgressAndAlerts();
+
+        Map<UUID, SavingGoalProgressDTO> progressMap = savingGoalProgress.stream()
+                .collect(Collectors.toMap(SavingGoalProgressDTO::getSavingGoalId, dto -> dto));
+
+        List<SavingGoal> savingGoals = savingGoalRepository
+                .findByWalletUser(currentUser)
+                .stream()
+                .filter(savingGoal -> {
+                    if (startDateTime != null && endDateTime != null) {
+                        return !savingGoal.getStartDate().isAfter(endDateTime) &&
+                                !savingGoal.getEndDate().isBefore(startDateTime);
+                    } else if (startDateTime != null) {
+                        return !savingGoal.getStartDate().isBefore(startDateTime);
+                    } else if (endDateTime != null) {
+                        return !savingGoal.getEndDate().isAfter(endDateTime);
+                    }
+                    return true;
+                })
+                .filter(savingGoal -> filter.getKeywords() == null ||
+                        (savingGoal.getDescription() != null &&
+                                savingGoal.getDescription().toLowerCase().contains(filter.getKeywords().toLowerCase())))
+                .filter(savingGoal -> filter.getCategoryName() == null ||
+                        savingGoal.getCategory().getName().equalsIgnoreCase(filter.getCategoryName()))
+                .filter(savingGoal -> filter.getWalletName() == null ||
+                        savingGoal.getWallet().getWalletName().equalsIgnoreCase(filter.getWalletName()))
+                .filter(savingGoal -> filter.getTargetAmount() == null ||
+                        savingGoal.getTargetAmount().compareTo(filter.getTargetAmount()) == 0)
+                .sorted(Comparator.comparing(SavingGoal::getCreatedAt).reversed())
+                .toList();
+
+        return savingGoals.stream()
+                .map(savingGoal -> progressMap.get(savingGoal.getSavingGoalId()))
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Transactional(readOnly = true)

@@ -1,15 +1,13 @@
 package JavaProject.MoneyWise.controllers;
 
-import JavaProject.MoneyWise.models.dtos.savingGoal.CreateSavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalProgressDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.UpdateSavingGoalDTO;
+import JavaProject.MoneyWise.models.dtos.savingGoal.*;
 import JavaProject.MoneyWise.services.SavingGoalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,6 +59,16 @@ public class SavingGoalController {
     public ResponseEntity<UUID> deleteSavingGoal(@PathVariable("savingGoalId") UUID savingGoalId) {
         UUID deletedId = savingGoalService.deleteSavingGoal(savingGoalId);
         return ResponseEntity.ok(deletedId);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Search for savingGoals based on criteria")
+    @GetMapping("/search")
+    public ResponseEntity<List<SavingGoalProgressDTO>> searchSavingGoals(
+            @Valid @ModelAttribute @ParameterObject SearchSavingGoalsDTO dto
+    ) {
+        List<SavingGoalProgressDTO> result = savingGoalService.searchSavingGoals(dto);
+        return ResponseEntity.ok(result);
     }
 
     @SecurityRequirement(name = "bearerAuth")

@@ -1,9 +1,6 @@
 package JavaProject.MoneyWise.services;
 
-import JavaProject.MoneyWise.models.dtos.savingGoal.CreateSavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.SavingGoalProgressDTO;
-import JavaProject.MoneyWise.models.dtos.savingGoal.UpdateSavingGoalDTO;
+import JavaProject.MoneyWise.models.dtos.savingGoal.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -24,6 +21,9 @@ public interface SavingGoalService {
 
     @Transactional
     UUID deleteSavingGoal(UUID id);
+
+    @Transactional(readOnly = true)
+    List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter);
 
     @Transactional(readOnly = true)
     List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts();

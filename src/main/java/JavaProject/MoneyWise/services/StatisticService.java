@@ -2,6 +2,7 @@ package JavaProject.MoneyWise.services;
 
 import JavaProject.MoneyWise.models.dtos.report.ReportInfoDTO;
 import JavaProject.MoneyWise.models.dtos.statistic.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -15,4 +16,5 @@ public interface StatisticService {
     YearlySummaryDTO getYearlySummary(int year);
     CashFlowSummaryDTO getCashFlowSummary(LocalDate startDate, LocalDate endDate);
     Object generateReportData(ReportInfoDTO reportInfo, String acceptLanguage);
+    List<WalletBreakdownDTO> getWalletBreakdown(LocalDate startDate, LocalDate endDate);
 }
