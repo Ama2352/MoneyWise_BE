@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
-              name="MonthlyDetailSubreport" pageWidth="555" pageHeight="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" whenNoDataType="AllSectionsNoDetail">
+              name="DailyDetailSubreport" pageWidth="555" pageHeight="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" whenNoDataType="AllSectionsNoDetail">
 
     <parameter name="currencySymbol" class="java.lang.String">
         <defaultValueExpression><![CDATA["VND"]]></defaultValueExpression>
@@ -11,7 +11,7 @@
         <defaultValueExpression><![CDATA["en"]]></defaultValueExpression>
     </parameter>
 
-    <field name="monthName" class="java.lang.String"/>
+    <field name="dayOfWeek" class="java.lang.String"/>
     <field name="income" class="java.math.BigDecimal"/>
     <field name="expense" class="java.math.BigDecimal"/>
 
@@ -28,7 +28,7 @@
                 <textElement verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="12" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Tháng" : "Month"]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Ngày" : "Day"]]></textFieldExpression>
             </textField>
             <textField>
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#FFFFFF"/>
@@ -60,21 +60,16 @@
                     <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
                 <textFieldExpression><![CDATA[
-                    $F{monthName} == null ? "" :
+                    $F{dayOfWeek} == null ? "" :
                     $P{languageCode}.equals("vi") ?
-                        ($F{monthName}.equalsIgnoreCase("January") ? "Tháng 1" :
-                        $F{monthName}.equalsIgnoreCase("February") ? "Tháng 2" :
-                        $F{monthName}.equalsIgnoreCase("March") ? "Tháng 3" :
-                        $F{monthName}.equalsIgnoreCase("April") ? "Tháng 4" :
-                        $F{monthName}.equalsIgnoreCase("May") ? "Tháng 5" :
-                        $F{monthName}.equalsIgnoreCase("June") ? "Tháng 6" :
-                        $F{monthName}.equalsIgnoreCase("July") ? "Tháng 7" :
-                        $F{monthName}.equalsIgnoreCase("August") ? "Tháng 8" :
-                        $F{monthName}.equalsIgnoreCase("September") ? "Tháng 9" :
-                        $F{monthName}.equalsIgnoreCase("October") ? "Tháng 10" :
-                        $F{monthName}.equalsIgnoreCase("November") ? "Tháng 11" :
-                        $F{monthName}.equalsIgnoreCase("December") ? "Tháng 12" : $F{monthName})
-                    : $F{monthName}
+                        ($F{dayOfWeek}.equalsIgnoreCase("Monday") ? "Thứ Hai" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Tuesday") ? "Thứ Ba" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Wednesday") ? "Thứ Tư" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Thursday") ? "Thứ Năm" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Friday") ? "Thứ Sáu" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Saturday") ? "Thứ Bảy" :
+                        $F{dayOfWeek}.equalsIgnoreCase("Sunday") ? "Chủ Nhật" : $F{dayOfWeek})
+                    : $F{dayOfWeek}
                 ]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">

@@ -59,7 +59,11 @@
                 <textElement verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{weekNumber}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[
+                    $F{weekNumber} == null ? "" :
+                    $P{languageCode}.equals("vi") ?
+                        ("Tuần " + $F{weekNumber}) : $F{weekNumber}
+                ]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="180" y="5" width="160" height="20" forecolor="#27AE60"/>

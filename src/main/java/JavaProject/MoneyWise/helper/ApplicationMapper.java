@@ -22,11 +22,13 @@ import JavaProject.MoneyWise.models.entities.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.util.Set;
 import java.util.UUID;
 
+@Component
 @Mapper(componentModel = "spring", uses = PasswordEncoderHelper.class)
 public interface ApplicationMapper {
 
