@@ -77,8 +77,9 @@ public class BudgetController {
     @Operation(summary = "Retrieve progress and alerts for active budgets")
     @GetMapping("/progress")
     public ResponseEntity<List<BudgetProgressDTO>> getBudgetProgressAndAlerts(
-            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        List<BudgetProgressDTO> progress = budgetService.getBudgetProgressAndAlerts(acceptLanguage);
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+            @RequestParam(value = "currency", required = false) String currency) {
+        List<BudgetProgressDTO> progress = budgetService.getBudgetProgressAndAlerts(acceptLanguage, currency);
         return ResponseEntity.ok(progress);
     }
 }

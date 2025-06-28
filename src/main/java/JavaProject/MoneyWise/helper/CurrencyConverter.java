@@ -13,7 +13,10 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.text.NumberFormat;
+import java.util.Currency;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Component
@@ -58,15 +61,62 @@ public class CurrencyConverter {
             if (vndRateNode.isMissingNode()) {
                 throw new RuntimeException("VND rate not found in response");
             }
-            return vndRateNode.decimalValue().setScale(2, RoundingMode.HALF_UP);
+            return vndRateNode.decimalValue();
         } catch (Exception e) {
             logger.error("Parse error: {}", e.getMessage());
             throw new RuntimeException("Unable to parse exchange rate", e);
         }
     }
 
+    // Convert VND amount to USD using exchange rate
+    public BigDecimal convertVNDtoUSD(BigDecimal vndAmount, BigDecimal exchangeRate) {
+        if (vndAmount == null || exchangeRate == null || exchangeRate.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid amount or exchange rate");
+        }
+        return vndAmount.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+    }
+
+    public String formatAmountToDisplay(BigDecimal amount, String currencyCode) {
+        if (amount == null) return "0.00";
+        try {
+            String currency = currencyCode.toUpperCase();
+
+            switch (currency) {
+                case "VND" -> {
+                    // Locale.of(...) is the modern way
+                    Locale locale = Locale.of("vi", "VN");
+                    NumberFormat format = NumberFormat.getInstance(locale);
+                    format.setMaximumFractionDigits(0);
+                    format.setMinimumFractionDigits(0);
+                    return format.format(amount) + "đ";
+                }
+
+                case "USD" -> {
+                    Locale locale = Locale.US;
+                    NumberFormat format = NumberFormat.getCurrencyInstance(locale);
+                    format.setCurrency(Currency.getInstance("USD"));
+                    format.setMinimumFractionDigits(2);
+                    format.setMaximumFractionDigits(2);
+                    return format.format(amount);
+                }
+
+                default -> {
+                    // Fallback for unsupported currencies
+                    Locale fallbackLocale = Locale.getDefault();
+                    NumberFormat fallback = NumberFormat.getInstance(fallbackLocale);
+                    fallback.setMinimumFractionDigits(2);
+                    fallback.setMaximumFractionDigits(2);
+                    return currency + " " + fallback.format(amount);
+                }
+            }
+
+        } catch (Exception e) {
+            return amount.setScale(2, RoundingMode.HALF_UP).toPlainString() + " " + currencyCode;
+        }
+    }
+
     // Convert report data from VND to USD
-    public Object convertToUSD(Object reportData, BigDecimal exchangeRate, String reportType) {
+    public Object convertForUSDReport(Object reportData, BigDecimal exchangeRate, String reportType) {
         if (reportData == null) {
             throw new IllegalStateException("Report data is null: " + reportType);
         }

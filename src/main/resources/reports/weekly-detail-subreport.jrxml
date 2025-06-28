@@ -10,6 +10,7 @@
     <parameter name="languageCode" class="java.lang.String">
         <defaultValueExpression><![CDATA["en"]]></defaultValueExpression>
     </parameter>
+    <parameter name="currencyConverter" class="JavaProject.MoneyWise.helper.CurrencyConverter"/>
 
     <field name="weekNumber" class="java.lang.String"/>
     <field name="income" class="java.math.BigDecimal"/>
@@ -70,14 +71,14 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{income} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{income}) : new java.text.DecimalFormat("#,##0").format($F{income})) : "0"]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$F{income} != null ? $P{currencyConverter}.formatAmountToDisplay($F{income}, $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="340" y="5" width="160" height="20" forecolor="#E74C3C"/>
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="10" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{expense} != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($F{expense}) : new java.text.DecimalFormat("#,##0").format($F{expense})) : "0"]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$F{expense} != null ? $P{currencyConverter}.formatAmountToDisplay($F{expense}, $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
             <line>
                 <reportElement x="0" y="29" width="510" height="1"/>

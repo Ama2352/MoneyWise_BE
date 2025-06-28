@@ -13,6 +13,7 @@
     <parameter name="languageCode" class="java.lang.String">
         <defaultValueExpression><![CDATA["en"]]></defaultValueExpression>
     </parameter>
+    <parameter name="currencyConverter" class="JavaProject.MoneyWise.helper.CurrencyConverter"/>
 
     <title>
         <band height="100">
@@ -67,7 +68,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="18" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalIncome() != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($P{cashFlowData}.getTotalIncome()) : new java.text.DecimalFormat("#,##0").format($P{cashFlowData}.getTotalIncome())) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalIncome() != null ? $P{currencyConverter}.formatAmountToDisplay($P{cashFlowData}.getTotalIncome(), $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
 
             <rectangle>
@@ -88,7 +89,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="18" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalExpenses() != null ? ($P{currencySymbol}.equals("USD") ? new java.text.DecimalFormat("#,##0.00").format($P{cashFlowData}.getTotalExpenses()) : new java.text.DecimalFormat("#,##0").format($P{cashFlowData}.getTotalExpenses())) + " " + $P{currencySymbol} : "0 " + $P{currencySymbol}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$P{cashFlowData}.getTotalExpenses() != null ? $P{currencyConverter}.formatAmountToDisplay($P{cashFlowData}.getTotalExpenses(), $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
 
             <textField>

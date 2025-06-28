@@ -16,5 +16,7 @@ public class SearchBudgetsDTO {
     private String keywords;
     private String categoryName;
     private String walletName;
-    private BigDecimal limitAmount;
+    private BigDecimal minLimitAmount;
+    private BigDecimal maxLimitAmount;
+    private String currency;
 }

@@ -75,8 +75,9 @@ public class SavingGoalController {
     @Operation(summary = "Retrieve progress and alerts for active saving goals")
     @GetMapping("/progress")
     public ResponseEntity<List<SavingGoalProgressDTO>> getSavingGoalProgressAndAlerts(
-            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        List<SavingGoalProgressDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts(acceptLanguage);
+            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+            @RequestParam(value = "currency", required = false) String currency) {
+        List<SavingGoalProgressDTO> progress = savingGoalService.getSavingGoalProgressAndAlerts(acceptLanguage, currency);
         return ResponseEntity.ok(progress);
     }
 }

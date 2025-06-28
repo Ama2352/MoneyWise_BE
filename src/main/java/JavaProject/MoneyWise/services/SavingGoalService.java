@@ -26,5 +26,5 @@ public interface SavingGoalService {
     List<SavingGoalProgressDTO> searchSavingGoals(SearchSavingGoalsDTO filter, String acceptLanguage);
 
     @Transactional(readOnly = true)
-    List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts(String acceptLanguage);
+    List<SavingGoalProgressDTO> getSavingGoalProgressAndAlerts(String acceptLanguage, String currency);
 }

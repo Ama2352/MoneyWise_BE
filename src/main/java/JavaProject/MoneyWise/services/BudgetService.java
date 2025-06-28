@@ -26,5 +26,5 @@ public interface BudgetService {
     List<BudgetProgressDTO> searchBudgets(SearchBudgetsDTO filter, String acceptLanguage);
 
     @Transactional(readOnly = true)
-    List<BudgetProgressDTO> getBudgetProgressAndAlerts(String acceptLanguage);
+    List<BudgetProgressDTO> getBudgetProgressAndAlerts(String acceptLanguage, String currency);
 }

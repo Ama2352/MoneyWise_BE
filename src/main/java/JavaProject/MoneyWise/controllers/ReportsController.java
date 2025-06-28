@@ -54,10 +54,9 @@ public class ReportsController {
             if (!currency.equals("VND") && !currency.equals("USD")) {
                 throw new IllegalArgumentException("Unsupported currency: " + currency);
             }
-            String currencySymbol = currency;
             if ("USD".equalsIgnoreCase(currency)) {
                 BigDecimal exchangeRate = currencyConverter.fetchExchangeRate();
-                reportData = currencyConverter.convertToUSD(reportData, exchangeRate, reportInfo.getType());
+                reportData = currencyConverter.convertForUSDReport(reportData, exchangeRate, reportInfo.getType());
             }
 
             // Determine report path
@@ -74,8 +73,9 @@ public class ReportsController {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("startDate", reportInfo.getStartDate());
             parameters.put("endDate", reportInfo.getEndDate());
-            parameters.put("currencySymbol", currencySymbol);
+            parameters.put("currencySymbol", currency);
             parameters.put("languageCode", languageCode);
+            parameters.put("currencyConverter", currencyConverter);
 
             JasperPrint jasperPrint;
             if ("cash-flow".equalsIgnoreCase(reportInfo.getType()) && reportData instanceof CashFlowSummaryDTO cashFlow) {

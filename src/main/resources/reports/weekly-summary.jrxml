@@ -13,6 +13,7 @@
     <parameter name="languageCode" class="java.lang.String">
         <defaultValueExpression><![CDATA["en"]]></defaultValueExpression>
     </parameter>
+    <parameter name="currencyConverter" class="JavaProject.MoneyWise.helper.CurrencyConverter"/>
 
     <field name="totalIncome" class="java.math.BigDecimal"/>
     <field name="totalExpenses" class="java.math.BigDecimal"/>
@@ -76,14 +77,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="16" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[
-                    $F{totalIncome} != null
-                        ? ($P{currencySymbol}.equals("USD")
-                            ? new java.text.DecimalFormat("#,##0.00").format($F{totalIncome})
-                            : new java.text.DecimalFormat("#,##0").format($F{totalIncome}))
-                          + " " + $P{currencySymbol}
-                        : "0 " + $P{currencySymbol}
-                ]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$F{totalIncome} != null ? $P{currencyConverter}.formatAmountToDisplay($F{totalIncome}, $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
 
             <rectangle>
@@ -104,14 +98,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="16" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[
-                    $F{totalExpenses} != null
-                        ? ($P{currencySymbol}.equals("USD")
-                            ? new java.text.DecimalFormat("#,##0.00").format($F{totalExpenses})
-                            : new java.text.DecimalFormat("#,##0").format($F{totalExpenses}))
-                          + " " + $P{currencySymbol}
-                        : "0 " + $P{currencySymbol}
-                ]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$F{totalExpenses} != null ? $P{currencyConverter}.formatAmountToDisplay($F{totalExpenses}, $P{currencySymbol}) : "0"]]></textFieldExpression>
             </textField>
 
             <textField>

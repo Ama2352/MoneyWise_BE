@@ -16,5 +16,7 @@ public class SearchSavingGoalsDTO {
     private String keywords;
     private String categoryName;
     private String walletName;
-    private BigDecimal targetAmount;
+    private BigDecimal minTargetAmount;
+    private BigDecimal maxTargetAmount;
+    private String currency;
 }
