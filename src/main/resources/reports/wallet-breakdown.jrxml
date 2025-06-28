@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
-              name="CategoryBreakdownReport" pageWidth="595" pageHeight="842" leftMargin="20" rightMargin="20" whenNoDataType="AllSectionsNoDetail">
+              name="WalletBreakdownReport" pageWidth="595" pageHeight="842" leftMargin="20" rightMargin="20" whenNoDataType="AllSectionsNoDetail">
     <parameter name="startDate" class="java.time.LocalDate"/>
     <parameter name="endDate" class="java.time.LocalDate"/>
     <parameter name="currencySymbol" class="java.lang.String">
@@ -13,7 +13,7 @@
     </parameter>
     <parameter name="currencyConverter" class="JavaProject.MoneyWise.helper.CurrencyConverter"/>
 
-    <field name="category" class="java.lang.String"/>
+    <field name="walletName" class="java.lang.String"/>
     <field name="totalIncome" class="java.math.BigDecimal"/>
     <field name="totalExpense" class="java.math.BigDecimal"/>
     <field name="incomePercentage" class="java.math.BigDecimal"/>
@@ -32,7 +32,7 @@
                 <textElement textAlignment="Center" verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="26" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Báo Cáo Danh Mục" : "Category Breakdown"]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Báo Cáo Ví" : "Wallet Breakdown"]]></textFieldExpression>
             </textField>
             <textField>
                 <reportElement x="0" y="55" width="555" height="30" forecolor="#ECF0F1"/>
@@ -56,7 +56,7 @@
                 <textElement verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="12" isBold="true" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Danh mục" : "Category"]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$P{languageCode}.equals("vi") ? "Tên ví" : "Wallet Name"]]></textFieldExpression>
             </textField>
             <textField>
                 <reportElement x="140" y="15" width="110" height="25" forecolor="#FFFFFF"/>
@@ -101,7 +101,7 @@
                 <textElement verticalAlignment="Middle">
                     <font fontName="DejaVu Sans" size="11" pdfEncoding="UTF-8" isPdfEmbedded="true"/>
                 </textElement>
-                <textFieldExpression><![CDATA[$F{category}]]></textFieldExpression>
+                <textFieldExpression><![CDATA[$F{walletName}]]></textFieldExpression>
             </textField>
             <textField isBlankWhenNull="true">
                 <reportElement x="140" y="5" width="110" height="20" forecolor="#27AE60"/>

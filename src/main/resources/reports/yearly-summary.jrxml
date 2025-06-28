@@ -101,11 +101,15 @@
 
             <subreport>
                 <reportElement x="20" y="180" width="510" height="120"/>
+
                 <subreportParameter name="currencySymbol">
                     <subreportParameterExpression><![CDATA[$P{currencySymbol}]]></subreportParameterExpression>
                 </subreportParameter>
                 <subreportParameter name="languageCode">
                     <subreportParameterExpression><![CDATA[$P{languageCode}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="currencyConverter">
+                    <subreportParameterExpression><![CDATA[$P{currencyConverter}]]></subreportParameterExpression>
                 </subreportParameter>
                 <dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($F{yearlyDetails})]]></dataSourceExpression>
                 <subreportExpression><![CDATA["reports/yearly-detail-subreport.jasper"]]></subreportExpression>

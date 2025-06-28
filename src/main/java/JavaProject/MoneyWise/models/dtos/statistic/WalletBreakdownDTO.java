@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WalletBreakdownDTO {
-    private String wallet = "";
+    private String walletName = "";
     private BigDecimal totalIncome;
     private BigDecimal totalExpense;
     private BigDecimal incomePercentage;

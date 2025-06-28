@@ -541,144 +541,146 @@ public class StatisticServiceImpl implements StatisticService {
             return result;
         }
 
-        @Override
-        public Object generateReportData(ReportInfoDTO reportInfo, String acceptLanguage) {
-            try {
-                switch (reportInfo.getType().toLowerCase()) {
-                    case "category-breakdown":
-                        return getCategoryBreakdown(reportInfo.getStartDate(), reportInfo.getEndDate());
-                    case "cash-flow":
-                        return getCashFlowSummary(reportInfo.getStartDate(), reportInfo.getEndDate());
-                    case "daily-summary":
-                        return getDailySummary(reportInfo.getStartDate());
-                    case "weekly-summary":
-                        return getWeeklySummary(reportInfo.getStartDate());
-                    case "monthly-summary":
-                        return getMonthlySummary(YearMonth.from(reportInfo.getStartDate()));
-                    case "yearly-summary":
-                        return getYearlySummary(reportInfo.getStartDate().getYear());
-                    default:
-                        throw new IllegalArgumentException(
-                                "Unsupported report type: " + reportInfo.getType());
-                }
-            } catch (Exception e) {
-                log.error("Error generating report data for type: {}", reportInfo.getType(), e);
-                throw new RuntimeException("Failed to generate report data", e);
-            }
+    @Transactional(readOnly = true)
+    @Override
+    public List<WalletBreakdownDTO> getWalletBreakdown(LocalDate startDate, LocalDate endDate) {
+        try {
+            log.info("Generating wallet breakdown for period {} to {}", startDate, endDate);
+
+            User currentUser = HelperFunctions.getCurrentUser(userRepository);
+            List<Wallet> userWallets = walletRepository.findAllByUser(currentUser);
+            Set<UUID> userWalletIds = userWallets.stream()
+                    .map(Wallet::getWalletId)
+                    .collect(Collectors.toSet());
+
+            List<Transaction> transactions = transactionRepository.findAllByWalletUser(currentUser).stream()
+                    .filter(t -> !t.getTransactionDate().toLocalDate().isBefore(startDate) &&
+                            !t.getTransactionDate().toLocalDate().isAfter(endDate) &&
+                            userWalletIds.contains(t.getWallet().getWalletId()))
+                    .toList();
+
+            List<Transaction> incomeTransactions = transactions.stream()
+                    .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
+                    .toList();
+
+            List<Transaction> expenseTransactions = transactions.stream()
+                    .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
+                    .toList();
+
+            BigDecimal totalIncome = incomeTransactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalExpense = expenseTransactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .abs();
+
+            Map<String, List<Transaction>> groupedByWallet = transactions.stream()
+                    .collect(Collectors.groupingBy(t -> t.getWallet().getWalletName()));
+
+            return groupedByWallet.entrySet().stream()
+                    .map(entry -> {
+                        String walletName = entry.getKey();
+                        List<Transaction> walletTransactions = entry.getValue();
+                        Wallet wallet = walletTransactions.getFirst().getWallet();
+
+                        BigDecimal walletIncome = walletTransactions.stream()
+                                .filter(t -> TRANSACTION_TYPE_INCOME
+                                        .equalsIgnoreCase(t.getType()))
+                                .map(Transaction::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                        BigDecimal walletExpense = walletTransactions.stream()
+                                .filter(t -> TRANSACTION_TYPE_EXPENSE
+                                        .equalsIgnoreCase(t.getType()))
+                                .map(Transaction::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                .abs();
+
+                        BigDecimal incomePercentage = totalIncome
+                                .compareTo(BigDecimal.ZERO) == 0
+                                ? BigDecimal.ZERO
+                                : walletIncome.divide(totalIncome, 4,
+                                        RoundingMode.HALF_UP)
+                                .multiply(BigDecimal
+                                        .valueOf(100))
+                                .setScale(2, RoundingMode.HALF_UP);
+
+                        BigDecimal expensePercentage = totalExpense
+                                .compareTo(BigDecimal.ZERO) == 0
+                                ? BigDecimal.ZERO
+                                : walletExpense.divide(totalExpense, 4,
+                                        RoundingMode.HALF_UP)
+                                .multiply(BigDecimal
+                                        .valueOf(100))
+                                .setScale(2, RoundingMode.HALF_UP);
+
+                        // Fetch Budget and SavingGoal for this wallet
+                        List<Budget> budgets = budgetRepository
+                                .findByWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                        wallet, endDate.atStartOfDay(),
+                                        startDate.atStartOfDay());
+                        List<SavingGoal> goals = savingGoalRepository
+                                .findByWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                                        wallet, endDate.atStartOfDay(),
+                                        startDate.atStartOfDay());
+
+                        BigDecimal budgetLimit = budgets.isEmpty() ? BigDecimal.ZERO
+                                : budgets.getFirst().getLimitAmount();
+                        BigDecimal budgetSpending = budgets.isEmpty() ? BigDecimal.ZERO
+                                : budgets.getFirst().getCurrentSpending();
+                        BigDecimal goalTarget = goals.isEmpty() ? BigDecimal.ZERO
+                                : goals.getFirst().getTargetAmount();
+                        BigDecimal goalSaved = goals.isEmpty() ? BigDecimal.ZERO
+                                : goals.getFirst().getSavedAmount();
+
+                        return new WalletBreakdownDTO(
+                                walletName,
+                                walletIncome,
+                                walletExpense,
+                                incomePercentage,
+                                expensePercentage,
+                                budgetLimit,
+                                budgetSpending,
+                                goalTarget,
+                                goalSaved);
+                    })
+                    .sorted(Comparator.comparing(
+                            dto -> dto.getTotalIncome().add(dto.getTotalExpense()),
+                            Comparator.reverseOrder()))
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error generating wallet breakdown", e);
+            throw new RuntimeException("Failed to generate wallet breakdown", e);
         }
+    }
 
-        @Transactional(readOnly = true)
-        @Override
-        public List<WalletBreakdownDTO> getWalletBreakdown(LocalDate startDate, LocalDate endDate) {
-            try {
-                log.info("Generating wallet breakdown for period {} to {}", startDate, endDate);
-
-                User currentUser = HelperFunctions.getCurrentUser(userRepository);
-                List<Wallet> userWallets = walletRepository.findAllByUser(currentUser);
-                Set<UUID> userWalletIds = userWallets.stream()
-                        .map(Wallet::getWalletId)
-                        .collect(Collectors.toSet());
-
-                List<Transaction> transactions = transactionRepository.findAllByWalletUser(currentUser).stream()
-                        .filter(t -> !t.getTransactionDate().toLocalDate().isBefore(startDate) &&
-                                !t.getTransactionDate().toLocalDate().isAfter(endDate) &&
-                                userWalletIds.contains(t.getWallet().getWalletId()))
-                        .toList();
-
-                List<Transaction> incomeTransactions = transactions.stream()
-                        .filter(t -> TRANSACTION_TYPE_INCOME.equalsIgnoreCase(t.getType()))
-                        .toList();
-
-                List<Transaction> expenseTransactions = transactions.stream()
-                        .filter(t -> TRANSACTION_TYPE_EXPENSE.equalsIgnoreCase(t.getType()))
-                        .toList();
-
-                BigDecimal totalIncome = incomeTransactions.stream()
-                        .map(Transaction::getAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal totalExpense = expenseTransactions.stream()
-                        .map(Transaction::getAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .abs();
-
-                Map<String, List<Transaction>> groupedByWallet = transactions.stream()
-                        .collect(Collectors.groupingBy(t -> t.getWallet().getWalletName()));
-
-                return groupedByWallet.entrySet().stream()
-                        .map(entry -> {
-                            String walletName = entry.getKey();
-                            List<Transaction> walletTransactions = entry.getValue();
-                            Wallet wallet = walletTransactions.getFirst().getWallet();
-
-                            BigDecimal walletIncome = walletTransactions.stream()
-                                    .filter(t -> TRANSACTION_TYPE_INCOME
-                                            .equalsIgnoreCase(t.getType()))
-                                    .map(Transaction::getAmount)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                            BigDecimal walletExpense = walletTransactions.stream()
-                                    .filter(t -> TRANSACTION_TYPE_EXPENSE
-                                            .equalsIgnoreCase(t.getType()))
-                                    .map(Transaction::getAmount)
-                                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                                    .abs();
-
-                            BigDecimal incomePercentage = totalIncome
-                                    .compareTo(BigDecimal.ZERO) == 0
-                                    ? BigDecimal.ZERO
-                                    : walletIncome.divide(totalIncome, 4,
-                                            RoundingMode.HALF_UP)
-                                    .multiply(BigDecimal
-                                            .valueOf(100))
-                                    .setScale(2, RoundingMode.HALF_UP);
-
-                            BigDecimal expensePercentage = totalExpense
-                                    .compareTo(BigDecimal.ZERO) == 0
-                                    ? BigDecimal.ZERO
-                                    : walletExpense.divide(totalExpense, 4,
-                                            RoundingMode.HALF_UP)
-                                    .multiply(BigDecimal
-                                            .valueOf(100))
-                                    .setScale(2, RoundingMode.HALF_UP);
-
-                            // Fetch Budget and SavingGoal for this wallet
-                            List<Budget> budgets = budgetRepository
-                                    .findByWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                                            wallet, endDate.atStartOfDay(),
-                                            startDate.atStartOfDay());
-                            List<SavingGoal> goals = savingGoalRepository
-                                    .findByWalletAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                                            wallet, endDate.atStartOfDay(),
-                                            startDate.atStartOfDay());
-
-                            BigDecimal budgetLimit = budgets.isEmpty() ? BigDecimal.ZERO
-                                    : budgets.getFirst().getLimitAmount();
-                            BigDecimal budgetSpending = budgets.isEmpty() ? BigDecimal.ZERO
-                                    : budgets.getFirst().getCurrentSpending();
-                            BigDecimal goalTarget = goals.isEmpty() ? BigDecimal.ZERO
-                                    : goals.getFirst().getTargetAmount();
-                            BigDecimal goalSaved = goals.isEmpty() ? BigDecimal.ZERO
-                                    : goals.getFirst().getSavedAmount();
-
-                            return new WalletBreakdownDTO(
-                                    walletName,
-                                    walletIncome,
-                                    walletExpense,
-                                    incomePercentage,
-                                    expensePercentage,
-                                    budgetLimit,
-                                    budgetSpending,
-                                    goalTarget,
-                                    goalSaved);
-                        })
-                        .sorted(Comparator.comparing(
-                                dto -> dto.getTotalIncome().add(dto.getTotalExpense()),
-                                Comparator.reverseOrder()))
-                        .collect(Collectors.toList());
-
-            } catch (Exception e) {
-                log.error("Error generating wallet breakdown", e);
-                throw new RuntimeException("Failed to generate wallet breakdown", e);
+    @Override
+    public Object generateReportData(ReportInfoDTO reportInfo, String acceptLanguage) {
+        try {
+            switch (reportInfo.getType().toLowerCase()) {
+                case "category-breakdown":
+                    return getCategoryBreakdown(reportInfo.getStartDate(), reportInfo.getEndDate());
+                case "wallet-breakdown":
+                    return getWalletBreakdown(reportInfo.getStartDate(), reportInfo.getEndDate());
+                case "cash-flow":
+                    return getCashFlowSummary(reportInfo.getStartDate(), reportInfo.getEndDate());
+                case "daily-summary":
+                    return getDailySummary(reportInfo.getStartDate());
+                case "weekly-summary":
+                    return getWeeklySummary(reportInfo.getStartDate());
+                case "monthly-summary":
+                    return getMonthlySummary(YearMonth.from(reportInfo.getStartDate()));
+                case "yearly-summary":
+                    return getYearlySummary(reportInfo.getStartDate().getYear());
+                default:
+                    throw new IllegalArgumentException(
+                            "Unsupported report type: " + reportInfo.getType());
             }
+        } catch (Exception e) {
+            log.error("Error generating report data for type: {}", reportInfo.getType(), e);
+            throw new RuntimeException("Failed to generate report data", e);
         }
+    }
 }

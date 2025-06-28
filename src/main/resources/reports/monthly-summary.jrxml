@@ -111,6 +111,9 @@
                 <subreportParameter name="languageCode">
                     <subreportParameterExpression><![CDATA[$P{languageCode}]]></subreportParameterExpression>
                 </subreportParameter>
+                <subreportParameter name="currencyConverter">
+                    <subreportParameterExpression><![CDATA[$P{currencyConverter}]]></subreportParameterExpression>
+                </subreportParameter>
                 <dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($F{monthlyDetails})]]></dataSourceExpression>
                 <subreportExpression><![CDATA["reports/monthly-detail-subreport.jasper"]]></subreportExpression>
             </subreport>
