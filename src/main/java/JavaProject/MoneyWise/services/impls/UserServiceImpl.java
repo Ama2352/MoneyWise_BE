@@ -78,32 +78,64 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileDTO updateCurrentUserProfile(UpdateProfileDTO model) {
         User currentUser = HelperFunctions.getCurrentUser(userRepository);
-
         Map<String, List<String>> errors = new HashMap<>();
 
-        if(!passwordEncoder.matches(model.getCurrentPassword(), currentUser.getPassword())) {
-            errors.put("CurrentPassword", List.of("The current password is incorrect."));
+        // Check if password update is requested (newPassword and confirmNewPassword are provided)
+        if (model.getNewPassword() != null && !model.getNewPassword().isEmpty()) {
+            // Validate current password
+            if (!passwordEncoder.matches(model.getCurrentPassword(), currentUser.getPassword())) {
+                errors.put("CurrentPassword", List.of("The current password is incorrect."));
+            }
+
+            // Validate new password pattern
+            if (!PASSWORD_PATTERN.matcher(model.getNewPassword()).matches()) {
+                errors.put("NewPassword", List.of("New password must contain at least 6 characters, including 1 uppercase, 1 special character."));
+            }
+
+            // Validate password confirmation
+            if (!model.getNewPassword().equals(model.getConfirmNewPassword())) {
+                errors.put("ConfirmNewPassword", List.of("The password and confirmation password do not match."));
+            }
+        } else if (model.getCurrentPassword() != null && !model.getCurrentPassword().isEmpty()) {
+            // Require current password for non-password field updates
+            if (!passwordEncoder.matches(model.getCurrentPassword(), currentUser.getPassword())) {
+                errors.put("CurrentPassword", List.of("The current password is incorrect."));
+            }
         }
 
-        if (!PASSWORD_PATTERN.matcher(model.getNewPassword()).matches()) {
-            errors.put("NewPassword", List.of("New password must contain at least 6 characters, including 1 uppercase, 1 special character."));
-        }
-
-        if (!model.getNewPassword().equals(model.getConfirmNewPassword())) {
-            errors.put("ConfirmNewPassword", List.of("The password and confirmation password do not match."));
-        }
-
-        if(!errors.isEmpty()) {
+        if (!errors.isEmpty()) {
             throw new ValidationException(errors);
         }
 
-        currentUser.setFirstName(model.getFirstName());
-        currentUser.setLastName(model.getLastName());
-        String encoded = passwordEncoder.encode(model.getNewPassword());
-        currentUser.setPassword(encoded);
+        // Update non-password fields only if validations pass
+        if (model.getFirstName() != null) {
+            currentUser.setFirstName(model.getFirstName());
+        }
+        if (model.getLastName() != null) {
+            currentUser.setLastName(model.getLastName());
+        }
+
+        // Update password only if newPassword is provided
+        if (model.getNewPassword() != null && !model.getNewPassword().isEmpty()) {
+            String encoded = passwordEncoder.encode(model.getNewPassword());
+            currentUser.setPassword(encoded);
+        }
 
         userRepository.save(currentUser);
 
         return applicationMapper.toUserProfileDTO(currentUser);
+    }
+
+    @Transactional
+    @Override
+    public void deleteUserAvatar(UUID userId) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+            imageService.deleteImage(user.getAvatarUrl());
+            user.setAvatarUrl(null);
+            userRepository.save(user);
+        }
     }
 }

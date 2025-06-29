@@ -1,5 +1,6 @@
 package JavaProject.MoneyWise.controllers;
 
+import JavaProject.MoneyWise.helper.ResourceNotFoundException;
 import JavaProject.MoneyWise.models.dtos.auth.LoginDTO;
 import JavaProject.MoneyWise.models.dtos.auth.RefreshTokenRequestDTO;
 import JavaProject.MoneyWise.models.dtos.auth.RefreshTokenResponseDTO;
@@ -55,6 +56,20 @@ public class AccountController {
         User currentUser = userService.getCurrentUser();
         String avatarUrl = userService.updateUserAvatar(currentUser.getId(), file);
         return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/avatar")
+    public ResponseEntity<?> deleteAvatar() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            userService.deleteUserAvatar(currentUser.getId());
+            return ResponseEntity.noContent().build(); // 204
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("error", "Failed to delete avatar"));
+        }
     }
 
     @SecurityRequirement(name = "bearerAuth")
