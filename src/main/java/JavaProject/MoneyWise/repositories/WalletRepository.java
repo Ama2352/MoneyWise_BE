@@ -21,4 +21,5 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     @Transactional
     @Query("UPDATE Wallet w SET w.balance = w.balance + :amount WHERE w.walletId = :walletId")
     void updateBalance(UUID walletId, BigDecimal amount);
+    Optional<Wallet> findByWalletNameAndUser(String walletName, User user);
 }

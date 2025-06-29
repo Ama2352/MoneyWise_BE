@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 public class LoginDTO {
 
-    @Schema(example = "demo@example.com")
+    @Schema(example = "demo3@example.com")
     private String email;
 
-    @Schema(example = "Demo@123")
+    @Schema(example = "Demo3@123")
     private String password;
 }
