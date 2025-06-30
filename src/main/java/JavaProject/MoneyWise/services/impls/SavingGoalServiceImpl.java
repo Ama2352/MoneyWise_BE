@@ -343,8 +343,8 @@ public class SavingGoalServiceImpl implements SavingGoalService {
     ) {
         String categoryName = savingGoal.getCategory().getName();
 
-        String startDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(savingGoal.getStartDate(), acceptLanguage);
-        String endDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(savingGoal.getEndDate(), acceptLanguage);
+        String startDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(savingGoal.getStartDate(), acceptLanguage, true);
+        String endDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(savingGoal.getEndDate(), acceptLanguage, true);
 
         BigDecimal targetAmount = currency.equalsIgnoreCase("USD")
                 ? currencyConverter.convertVNDtoUSD(savingGoal.getTargetAmount(), exchangeRateUSDtoVND)

@@ -40,12 +40,16 @@ public class CurrencyConverter {
     public BigDecimal fetchExchangeRate() {
         try {
             String response = restTemplate.getForObject(new URI(PRIMARY_CURRENCY_API), String.class);
-            return parseExchangeRate(response);
+            BigDecimal rate = parseExchangeRate(response);
+            logger.info("Fetched exchange rate (USD to VND) from primary API: {}", rate); // Log the rate
+            return rate;
         } catch (Exception e) {
             logger.warn("Primary currency API failed: {}", e.getMessage());
             try {
                 String response = restTemplate.getForObject(new URI(FALLBACK_CURRENCY_API), String.class);
-                return parseExchangeRate(response);
+                BigDecimal rate = parseExchangeRate(response);
+                logger.info("Fetched exchange rate (USD to VND) from fallback API: {}", rate); // Log the rate
+                return rate;
             } catch (Exception ex) {
                 logger.error("Fallback currency API failed: {}", ex.getMessage());
                 throw new RuntimeException("Unable to fetch exchange rate", ex);
@@ -73,7 +77,9 @@ public class CurrencyConverter {
         if (vndAmount == null || exchangeRate == null || exchangeRate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Invalid amount or exchange rate");
         }
-        return vndAmount.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+        BigDecimal usdAmount = vndAmount.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+        logger.info("Converted {} VND to {} USD using exchange rate {}", vndAmount, usdAmount, exchangeRate);
+        return usdAmount;
     }
 
     public String formatAmountToDisplay(BigDecimal amount, String currencyCode) {

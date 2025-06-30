@@ -348,8 +348,8 @@ public class BudgetServiceImpl implements BudgetService {
     ) {
         String categoryName = budget.getCategory().getName();
 
-        String startDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(budget.getStartDate(), acceptLanguage);
-        String endDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(budget.getEndDate(), acceptLanguage);
+        String startDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(budget.getStartDate(), acceptLanguage, true);
+        String endDate = DateTimeFormatterUtil.formatDateTimeWithLanguage(budget.getEndDate(), acceptLanguage, true);
 
         // Calculate amounts
         BigDecimal limitAmount = currency.equalsIgnoreCase("USD")
