@@ -35,4 +35,8 @@ build/
 # Ignore all log files
 *.log
 
-/LOCALIZATION_IMPLEMENTATION.md
+# Docker-related files
+.env
+docker-compose.override.yml
+*.env.*
+*.local.yml
