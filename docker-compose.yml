@@ -18,18 +18,17 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/moneywise
-      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_PROFILE: dev
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
 
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION: ${JWT_EXPIRATION}
-      REFRESH_SECRET: ${REFRESH_SECRET}
-      DB_PASSWORD: ${DB_PASSWORD}
-      CLOUD_NAME: ${CLOUD_NAME}
-      CLOUD_API_KEY: ${CLOUD_API_KEY}
-      CLOUD_API_SECRET: ${CLOUD_API_SECRET}
-      GEMINI_KEY: ${GEMINI_KEY}
+      jwt.secret: ${JWT_SECRET}
+      jwt.expiration: ${JWT_EXPIRATION}
+      cloudinary.cloud-name: ${CLOUD_NAME}
+      cloudinary.api-key: ${CLOUD_API_KEY}
+      cloudinary.api-secret: ${CLOUD_API_SECRET}
+      gemini.api.key: ${GEMINI_KEY}
     depends_on:
       - db
 
